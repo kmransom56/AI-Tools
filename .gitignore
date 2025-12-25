@@ -34,6 +34,20 @@ keys/
 
 # Port registry (contains sensitive port assignments)
 port-registry.json
+**/port-registry.json
+
+# Certificates directory
+certs/
+*.cer
+*.crt
+*.pfx
+*.csr
+*.inf
+
+# Logs directory
+logs/
+*.log
+*log.txt
 
 # Logs (may contain sensitive info)
 *.log

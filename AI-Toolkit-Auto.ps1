@@ -5,7 +5,7 @@
 # ---------------------------
 # Port Management Setup
 # ---------------------------
-$portManagerPath = Join-Path $PSScriptRoot "Port-Manager.ps1"
+$portManagerPath = Join-Path $PSScriptRoot "scripts\Port-Manager.ps1"
 if (Test-Path $portManagerPath) {
     . $portManagerPath
     Write-Log "Port management system loaded"
