@@ -1,0 +1,131 @@
+# ============================================
+# SENSITIVE INFORMATION - NEVER COMMIT
+# ============================================
+
+# Environment files with API keys
+.env
+*.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# API Keys and Secrets
+*api*key*
+*secret*
+*password*
+*token*
+*credential*
+
+# Certificates and keys
+*.key
+*.pem
+*.crt
+*.cer
+*.csr
+*.pfx
+*.p12
+*.inf
+*.jks
+*.keystore
+certs/
+certificates/
+keys/
+
+# Port registry (contains sensitive port assignments)
+port-registry.json
+
+# Logs (may contain sensitive info)
+*.log
+install-launch-log.txt
+launch-log.txt
+install-log.txt
+*.log.*
+
+# ============================================
+# DEVELOPMENT FILES
+# ============================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Archives
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+
+# User-specific
+Untitled-*.txt
+
+# Workspace files (may contain paths)
+*.code-workspace
+
+# Build outputs
+dist/
+build/
+out/
+*.egg-info/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration files with sensitive data
+config/*.local.*
+config/*secret*
+config/*key*

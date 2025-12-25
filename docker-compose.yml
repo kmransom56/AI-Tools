@@ -1,0 +1,35 @@
+services:
+  ai-toolkit:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai-toolkit
+    image: ai-toolkit:latest
+    container_name: ai-toolkit
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config:/app/config
+      - ./workspace:/app/workspace
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+# Optional: Add TabbyML for local code completion (requires GPU)
+# Uncomment if you have NVIDIA GPU and want local AI assistance
+#  tabbyml:
+#    image: tabbyml/tabby:latest
+#    container_name: tabbyml
+#    command: ["serve", "--model", "StarCoder-1B", "--device", "cpu"]
+#    ports:
+#      - "8080:8080"
+#    volumes:
+#      - tabby-data:/data
+#    restart: unless-stopped
+#
+#volumes:
+#  tabby-data:

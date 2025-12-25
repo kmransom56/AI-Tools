@@ -1,0 +1,58 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip and install foundational packages
+RUN pip install --upgrade pip setuptools wheel
+
+# Install AI/ML frameworks (using latest stable versions)
+RUN pip install --no-cache-dir \
+    torch \
+    transformers
+
+# Install OpenAI and AI CLI tools
+RUN pip install --no-cache-dir \
+    openai \
+    anthropic \
+    google-generativeai \
+    shell-gpt \
+    langchain \
+    langchain-openai \
+    langchain-anthropic
+
+# Install additional useful tools
+RUN pip install --no-cache-dir \
+    requests \
+    httpx \
+    python-dotenv \
+    pyyaml \
+    rich \
+    typer \
+    fastapi \
+    uvicorn \
+    jinja2
+
+# Create config directory
+RUN mkdir -p /app/config /app/templates
+
+# Copy web application files
+COPY ai_web_app.py /app/
+COPY templates/index.html /app/templates/
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV TOKENIZERS_PARALLELISM=false
+
+# Expose web interface port
+EXPOSE 8000
+
+# Start web server
+CMD ["uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,18 @@
+{
+  "portRanges": {
+    "preferred": {
+      "start": 11000,
+      "end": 12000,
+      "description": "Preferred range for new applications"
+    },
+    "migration": {
+      "start": 3000,
+      "end": 8000,
+      "description": "Range to migrate from"
+    }
+  },
+  "registryPath": "$env:USERPROFILE\\AI-Tools\\port-registry.json",
+  "cliPath": "$PSScriptRoot\\port-cli.ps1",
+  "modulePath": "$PSScriptRoot\\PortManager\\PortManager.psm1"
+}
+
