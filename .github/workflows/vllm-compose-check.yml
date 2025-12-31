@@ -13,19 +13,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate docker-compose config
+      - name: Discover docker-compose files
         run: |
-          echo "Validating docker-compose at powershell-signer/docker-compose.yml"
-          docker compose -f powershell-signer/docker-compose.yml config
+          files=$(git ls-files '*docker-compose.yml' || true)
+          if [ -z "$files" ]; then
+            echo "No docker-compose.yml files found in repository"; exit 1
+          fi
+          echo "Found compose files: $files"
+          echo "$files" > /tmp/compose_files.txt
 
-      - name: List services
+      - name: Validate docker-compose files and check ports
         run: |
-          echo "Services:"; docker compose -f powershell-signer/docker-compose.yml config --services
-
-      - name: Ensure at least one service exposes a port
-        run: |
-          if docker compose -f powershell-signer/docker-compose.yml config | grep -q "ports:"; then
-            echo "Found port mappings in compose file"
-          else
-            echo "No port mappings found in compose file"; exit 1
+          found_port=0
+          while read -r f; do
+            echo "Checking $f"
+            docker compose -f "$f" config
+            echo "Services in $f:"; docker compose -f "$f" config --services || true
+            if docker compose -f "$f" config | grep -q "ports:"; then
+              echo "Ports found in $f"
+              found_port=1
+            else
+              echo "No ports found in $f"
+            fi
+          done < /tmp/compose_files.txt
+          if [ "$found_port" -ne 1 ]; then
+            echo "No port mappings found in any docker-compose.yml"; exit 1
           fi
