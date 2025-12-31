@@ -34,6 +34,10 @@ jobs:
           cp powershell-signer/vllm_config.env.example powershell-signer/.env
           echo "MODEL_NAME=${{ github.event.inputs.model_name || github.event.inputs.model_name || 'gpt2' }}" >> powershell-signer/.env
           echo "GPU_MEMORY_UTILIZATION=${{ github.event.inputs.gpu_memory_utilization || github.event.inputs.gpu_memory_utilization || '0.9' }}" >> powershell-signer/.env
+          # Optional: provide VLLM_API_KEY via repository secret on the self-hosted runner
+          if [ -n "${{ secrets.VLLM_API_KEY }}" ]; then
+            echo "VLLM_API_KEY=${{ secrets.VLLM_API_KEY }}" >> powershell-signer/.env
+          fi
         shell: bash
 
       - name: Start vLLM (Docker Compose)
