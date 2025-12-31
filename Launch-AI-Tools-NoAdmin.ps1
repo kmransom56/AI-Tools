@@ -1,4 +1,4 @@
-# AI-Toolkit Launcher (No Admin Required)
+﻿# AI-Toolkit Launcher (No Admin Required)
 # This script only launches tools, doesn't install anything
 
 # ---------------------------
@@ -6,25 +6,25 @@
 # ---------------------------
 $logPath = "$env:USERPROFILE\AI-Tools\launch-log.txt"
 New-Item -ItemType File -Force -Path $logPath | Out-Null
-Function Write-Log {
+Function Write-ToolLog {
     param([string]$message)
     $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     "$timestamp - $message" | Out-File -Append -FilePath $logPath
-    Write-Host $message
+    Write-Output $message
 }
 
-Write-Log "=== AI Tools Launcher (No Admin) ==="
+Write-ToolLog -Message "=== AI Tools Launcher (No Admin) ==="
 
 # ---------------------------
 # Check if already installed
 # ---------------------------
-Write-Log "Checking Docker Desktop status..."
+Write-ToolLog -Message "Checking Docker Desktop status..."
 $dockerProcess = Get-Process -Name "Docker Desktop" -ErrorAction SilentlyContinue
 if (-not $dockerProcess) {
-    Write-Log "⚠ Docker Desktop is not running. Please start it manually or run as admin."
-    Write-Log "   Location: C:\Program Files\Docker\Docker\Docker Desktop.exe"
+    Write-ToolLog -Message "âš  Docker Desktop is not running. Please start it manually or run as admin."
+    Write-ToolLog -Message "   Location: C:\Program Files\Docker\Docker\Docker Desktop.exe"
 } else {
-    Write-Log "✅ Docker Desktop is running"
+    Write-ToolLog -Message "âœ… Docker Desktop is running"
 }
 
 # Wait for Docker daemon
@@ -35,41 +35,43 @@ while ($retryCount -lt $maxRetries) {
     try {
         docker info 2>&1 | Out-Null
         if ($LASTEXITCODE -eq 0) {
-            Write-Log "✅ Docker daemon is ready"
+            Write-ToolLog -Message "âœ… Docker daemon is ready"
             $dockerReady = $true
             break
         }
-    } catch {}
+    } catch {
+        Write-Verbose "docker info check failed: $($_.Exception.Message)"
+    }
     $retryCount++
-    Write-Log "Waiting for Docker daemon... ($retryCount/$maxRetries)"
+    Write-ToolLog -Message "Waiting for Docker daemon... ($retryCount/$maxRetries)"
     Start-Sleep -Seconds 3
 }
 
 if (-not $dockerReady) {
-    Write-Log "⚠ Docker daemon not ready. Container operations may fail."
+    Write-ToolLog -Message "âš  Docker daemon not ready. Container operations may fail."
 }
 
 # ---------------------------
 # Check Docker Container
 # ---------------------------
-Write-Log "Checking AI toolkit container..."
-cd "$env:USERPROFILE\AI-Tools"
+Write-ToolLog -Message "Checking AI toolkit container..."
+Set-Location "$env:USERPROFILE\AI-Tools"
 
 $containerRunning = docker ps --filter "name=ai-toolkit" --format "{{.Names}}" 2>$null
 if ($containerRunning -eq "ai-toolkit") {
-    Write-Log "✅ AI Toolkit container is already running"
+    Write-ToolLog -Message "âœ… AI Toolkit container is already running"
 } else {
     $containerExists = docker ps -a --filter "name=ai-toolkit" --format "{{.Names}}" 2>$null
     if ($containerExists -eq "ai-toolkit") {
-        Write-Log "Starting existing AI toolkit container..."
+        Write-ToolLog -Message "Starting existing AI toolkit container..."
         docker start ai-toolkit
         Start-Sleep -Seconds 3
-        Write-Log "✅ Container started"
+        Write-ToolLog -Message "âœ… Container started"
     } else {
-        Write-Log "Container doesn't exist. Starting with docker-compose..."
+        Write-ToolLog -Message "Container doesn't exist. Starting with docker-compose..."
         docker-compose up -d
         Start-Sleep -Seconds 5
-        Write-Log "✅ Container created and started"
+        Write-ToolLog -Message "âœ… Container created and started"
     }
 }
 
@@ -77,15 +79,15 @@ if ($containerRunning -eq "ai-toolkit") {
 $finalCheck = docker ps --filter "name=ai-toolkit" --format "{{.Names}}" 2>$null
 if ($finalCheck -eq "ai-toolkit") {
     # Test sgpt in container
-    Write-Log "Testing shell-gpt in container..."
+    Write-ToolLog -Message "Testing shell-gpt in container..."
     $sgptTest = docker exec ai-toolkit which sgpt 2>$null
     if ($sgptTest) {
-        Write-Log "✅ shell-gpt (sgpt) is available in container"
+        Write-ToolLog -Message "âœ… shell-gpt (sgpt) is available in container"
     } else {
-        Write-Log "⚠ shell-gpt not found in container"
+        Write-ToolLog -Message "âš  shell-gpt not found in container"
     }
 } else {
-    Write-Log "❌ Container failed to start"
+    Write-ToolLog -Message "âŒ Container failed to start"
 }
 
 # ---------------------------
@@ -93,9 +95,9 @@ if ($finalCheck -eq "ai-toolkit") {
 # ---------------------------
 $vscodePath = where.exe code 2>$null
 if ($vscodePath) {
-    Write-Log "✅ VS Code + Extensions: Installed"
+    Write-ToolLog -Message "âœ… VS Code + Extensions: Installed"
 } else {
-    Write-Log "⚠ VS Code not found in PATH"
+    Write-ToolLog -Message "âš  VS Code not found in PATH"
 }
 
 # ---------------------------
@@ -103,9 +105,9 @@ if ($vscodePath) {
 # ---------------------------
 $cursorPath = "$env:LOCALAPPDATA\Programs\Cursor\Cursor.exe"
 if (Test-Path $cursorPath) {
-    Write-Log "✅ Cursor IDE: Installed"
+    Write-ToolLog -Message "âœ… Cursor IDE: Installed"
 } else {
-    Write-Log "⚠ Cursor IDE not found at $cursorPath"
+    Write-ToolLog -Message "âš  Cursor IDE not found at $cursorPath"
 }
 
 # ---------------------------
@@ -115,28 +117,30 @@ $launch = Read-Host "`nWould you like to launch the tools now? (y/n)"
 if ($launch -eq "y") {
     # Launch Void if installed
     if (Test-Path "$env:USERPROFILE\void") {
-        Write-Log "Launching Void..."
+        Write-ToolLog -Message "Launching Void..."
         Start-Process "npm.cmd" -ArgumentList "start" -WorkingDirectory "$env:USERPROFILE\void"
     }
 
     # Launch Cursor IDE if installed
     if (Test-Path $cursorPath) {
-        Write-Log "Launching Cursor IDE..."
+        Write-ToolLog -Message "Launching Cursor IDE..."
         Start-Process $cursorPath
     }
 
-    Write-Log "✅ Tools launched"
+    Write-ToolLog -Message "âœ… Tools launched"
 }
 
 # ---------------------------
 # Summary
 # ---------------------------
-Write-Host "`n=== SUMMARY ===" -ForegroundColor Cyan
-Write-Host "✅ AI CLI Tools container: RUNNING" -ForegroundColor Green
-Write-Host "✅ shell-gpt (sgpt): Available in container" -ForegroundColor Green
-Write-Host "✅ VS Code + Extensions: Installed" -ForegroundColor Green
-Write-Host "✅ Cursor IDE: Installed" -ForegroundColor Green
-Write-Host "✅ Docker Desktop: Running" -ForegroundColor Green
-Write-Host "`nTo use sgpt:" -ForegroundColor Yellow
-Write-Host "  docker exec -it ai-toolkit sgpt 'your prompt here'" -ForegroundColor White
-Write-Host "`nLog saved at: $logPath" -ForegroundColor Gray
+Write-ToolLog -Message "`n=== SUMMARY ==="
+Write-ToolLog -Message "âœ… AI CLI Tools container: RUNNING"
+Write-ToolLog -Message "âœ… shell-gpt (sgpt): Available in container"
+Write-ToolLog -Message "âœ… VS Code + Extensions: Installed"
+Write-ToolLog -Message "âœ… Cursor IDE: Installed"
+Write-ToolLog -Message "âœ… Docker Desktop: Running"
+Write-ToolLog -Message "`nTo use sgpt:"
+Write-ToolLog -Message "  docker exec -it ai-toolkit sgpt 'your prompt here'"
+Write-ToolLog -Message "`nLog saved at: $logPath"
+
+
