@@ -53,7 +53,7 @@ Set-Content -Path (Join-Path $outDir 'installer-available.txt') -Value "Installe
 $zip = 'C:\Users\south\AI-Tools\backups\cursor-support-20251230.zip'
 if (Test-Path $zip) { Remove-Item $zip -Force }
 Compress-Archive -Path (Join-Path $outDir '*') -DestinationPath $zip
-Write-Host "Prepared diagnostics zip: $zip"
+Write-Output "Prepared diagnostics zip: $zip"
 
 # Open Cursor support/contact page
 Start-Process 'https://cursor.com/contact'
@@ -78,4 +78,4 @@ $encTitle = [Uri]::EscapeDataString($issueTitle)
 $encBody = [Uri]::EscapeDataString($body)
 $repoUrl = "https://github.com/cursor-dev/cursor/issues/new?title=$encTitle&body=$encBody"
 Start-Process $repoUrl
-Write-Host 'Opened support contact page and drafted GitHub issue (cursor-dev/cursor). Please review and submit.'
+Write-Output 'Opened support contact page and drafted GitHub issue (cursor-dev/cursor). Please review and submit.'

@@ -75,7 +75,7 @@ try {
     }
 
     Log "Cursor reinstall workflow completed"
-    Write-Host "Done. See log: $log"
+    Write-Output "Done. See log: $log"
 } catch {
     Log "ERROR: $($_.Exception.Message)"
     throw

@@ -22,22 +22,22 @@ Function Write-Log {
     param([string]$message)
     $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     "$timestamp - $message" | Out-File -Append -FilePath $logPath
-    Write-Host $message
+    Write-Output $message
 }
 
 # ---------------------------
 # Admin Check
 # ---------------------------
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Host "`n❌ ADMINISTRATOR PRIVILEGES REQUIRED" -ForegroundColor Red
-    Write-Host "`nThis script needs to:" -ForegroundColor Yellow
-    Write-Host "  • Install Chocolatey" -ForegroundColor White
-    Write-Host "  • Install software (Node.js, Python, Git, Docker, VS Code)" -ForegroundColor White
-    Write-Host "  • Start Docker Desktop" -ForegroundColor White
-    Write-Host "`nPlease run PowerShell as Administrator and try again." -ForegroundColor Cyan
-    Write-Host "`nAlternatively, if everything is already installed, use:" -ForegroundColor Yellow
-    Write-Host "  .\Launch-AI-Tools-NoAdmin.ps1" -ForegroundColor Green
-    Write-Host ""
+    Write-Log "`n❌ ADMINISTRATOR PRIVILEGES REQUIRED"
+    Write-Log "`nThis script needs to:"
+    Write-Log "  • Install Chocolatey"
+    Write-Log "  • Install software (Node.js, Python, Git, Docker, VS Code)"
+    Write-Log "  • Start Docker Desktop"
+    Write-Log "`nPlease run PowerShell as Administrator and try again."
+    Write-Log "`nAlternatively, if everything is already installed, use:"
+    Write-Log "  .\Launch-AI-Tools-NoAdmin.ps1"
+    Write-Log ""
     pause
     exit 1
 }
@@ -71,13 +71,13 @@ if (-not $OPENAI -or -not $ANTHROPIC -or -not $GEMINI) {
 
 if (-not $OPENAI -or -not $ANTHROPIC -or -not $GEMINI) {
     Write-Log "❌ Missing API keys! Please set OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY."
-    Write-Host "`nYou can set them in one of these ways:" -ForegroundColor Yellow
-    Write-Host "1. Windows Environment Variables (permanent)" -ForegroundColor White
-    Write-Host "2. Create a .env file in this directory with:" -ForegroundColor White
-    Write-Host "   OPENAI_API_KEY=your_key" -ForegroundColor Gray
-    Write-Host "   ANTHROPIC_API_KEY=your_key" -ForegroundColor Gray
-    Write-Host "   GEMINI_API_KEY=your_key" -ForegroundColor Gray
-    Write-Host "`nPress any key to exit..." -ForegroundColor Yellow
+    Write-Log "`nYou can set them in one of these ways:"
+    Write-Log "1. Windows Environment Variables (permanent)"
+    Write-Log "2. Create a .env file in this directory with:"
+    Write-Log "   OPENAI_API_KEY=your_key"
+    Write-Log "   ANTHROPIC_API_KEY=your_key"
+    Write-Log "   GEMINI_API_KEY=your_key"
+    Write-Log "`nPress any key to exit..."
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     exit 1
 }
@@ -499,6 +499,6 @@ if (Get-Command "gpt" -ErrorAction SilentlyContinue) {
 }
 
 Write-Log "✅ All available tools launched successfully!"
-Write-Host "`n✅ Full installation and launch complete. Log saved at: $logPath" -ForegroundColor Cyan
-Write-Host "`nPress any key to close this window..." -ForegroundColor Yellow
+Write-Log "`n✅ Full installation and launch complete. Log saved at: $logPath"
+Write-Log "`nPress any key to close this window..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

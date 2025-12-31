@@ -10,7 +10,7 @@ Function Write-Log {
     param([string]$message)
     $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     "$timestamp - $message" | Out-File -Append -FilePath $logPath
-    Write-Host $message
+    Write-Output $message
 }
 
 Write-Log "=== AI Tools Launcher (No Admin) ==="
@@ -133,12 +133,12 @@ if ($launch -eq "y") {
 # ---------------------------
 # Summary
 # ---------------------------
-Write-Host "`n=== SUMMARY ===" -ForegroundColor Cyan
-Write-Host "✅ AI CLI Tools container: RUNNING" -ForegroundColor Green
-Write-Host "✅ shell-gpt (sgpt): Available in container" -ForegroundColor Green
-Write-Host "✅ VS Code + Extensions: Installed" -ForegroundColor Green
-Write-Host "✅ Cursor IDE: Installed" -ForegroundColor Green
-Write-Host "✅ Docker Desktop: Running" -ForegroundColor Green
-Write-Host "`nTo use sgpt:" -ForegroundColor Yellow
-Write-Host "  docker exec -it ai-toolkit sgpt 'your prompt here'" -ForegroundColor White
-Write-Host "`nLog saved at: $logPath" -ForegroundColor Gray
+Write-Log "`n=== SUMMARY ==="
+Write-Log "✅ AI CLI Tools container: RUNNING"
+Write-Log "✅ shell-gpt (sgpt): Available in container"
+Write-Log "✅ VS Code + Extensions: Installed"
+Write-Log "✅ Cursor IDE: Installed"
+Write-Log "✅ Docker Desktop: Running"
+Write-Log "`nTo use sgpt:"
+Write-Log "  docker exec -it ai-toolkit sgpt 'your prompt here'"
+Write-Log "`nLog saved at: $logPath"

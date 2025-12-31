@@ -143,3 +143,6 @@ out/
 config/*.local.*
 config/*secret*
 config/*key*
+
+# Local backups and user data
+backups/
