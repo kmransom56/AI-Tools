@@ -1,0 +1,31 @@
+name: vLLM Docker Compose Check (Lightweight)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  compose-check:
+    name: Docker Compose syntax & basic sanity check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose config
+        run: |
+          echo "Validating docker-compose at powershell-signer/docker-compose.yml"
+          docker compose -f powershell-signer/docker-compose.yml config
+
+      - name: List services
+        run: |
+          echo "Services:"; docker compose -f powershell-signer/docker-compose.yml config --services
+
+      - name: Ensure at least one service exposes a port
+        run: |
+          if docker compose -f powershell-signer/docker-compose.yml config | grep -q "ports:"; then
+            echo "Found port mappings in compose file"
+          else
+            echo "No port mappings found in compose file"; exit 1
+          fi
