@@ -39,7 +39,9 @@ while ($retryCount -lt $maxRetries) {
             $dockerReady = $true
             break
         }
-    } catch {}
+    } catch {
+        Write-Verbose "docker info check failed: $($_.Exception.Message)"
+    }
     $retryCount++
     Write-Log "Waiting for Docker daemon... ($retryCount/$maxRetries)"
     Start-Sleep -Seconds 3

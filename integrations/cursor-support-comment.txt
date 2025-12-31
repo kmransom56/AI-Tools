@@ -1,0 +1,19 @@
+Hello @cursor team,
+
+I opened issue #3937 reporting a missing native addon (cursor_proclist.node) on Windows for Cursor v2.2.44.
+
+Summary of what I’ve done so far:
+- Confirmed the native binary is missing at: C:\Users\south\AppData\Local\Programs\Cursor\resources\app\node_modules\cursor-proclist\build\Release\cursor_proclist.node
+- Reinstalled Cursor using the per-user installer (CursorUserSetup-x64-2.2.44.exe)
+- Attempted a local rebuild but the package contains no native build sources (no binding.gyp)
+- Added a safe fallback stub in cursor-proclist/index.js to avoid app crashes (backup at index.js.bak)
+- Collected diagnostics and prepared a zip: C:\Users\south\AI-Tools\backups\cursor-support-20251230.zip (contains diagnostics.txt and index.js.bak)
+
+Please advise:
+- Can you provide a prebuilt cursor_proclist.node for v2.2.44, or point to a release that includes it?
+- If you prefer, I can attach the diagnostics zip to this issue (I’ll upload if you prefer, or provide it on request).
+
+If you need deeper traces (ProcMon, minidump, ETW) I can capture and attach on request.
+
+Thanks!
+—south

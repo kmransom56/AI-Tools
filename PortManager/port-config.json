@@ -12,7 +12,7 @@
     }
   },
   "registryPath": "$env:USERPROFILE\\AI-Tools\\port-registry.json",
-  "cliPath": "$PSScriptRoot\\port-cli.ps1",
+  "cliPath": "$PSScriptRoot\\..\\scripts\\port-cli.ps1",
   "modulePath": "$PSScriptRoot\\PortManager\\PortManager.psm1"
 }
 

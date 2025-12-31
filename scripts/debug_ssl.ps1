@@ -21,4 +21,4 @@ $webRequest.ServerCertificateValidationCallback = {
     }
     return $true
 }
-try { $webRequest.GetResponse().Dispose() } catch {}
+try { $webRequest.GetResponse().Dispose() } catch { Write-Verbose "GetResponse failed: $($_.Exception.Message)" }

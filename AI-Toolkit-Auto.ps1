@@ -100,7 +100,11 @@ $DOCKER_PASSWORD = $env:DOCKER_PASSWORD
 # ---------------------------
 Write-Log "Installing Chocolatey..."
 Set-ExecutionPolicy Bypass -Scope Process -Force
-Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+# Download and run the Chocolatey install script safely (avoid Invoke-Expression)
+$chocoInstallScript = (New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1')
+$tempChoco = Join-Path $env:TEMP 'choco-install.ps1'
+Set-Content -Path $tempChoco -Value $chocoInstallScript -Encoding UTF8
+& $tempChoco
 
 # ---------------------------
 # Install prerequisites
@@ -111,7 +115,7 @@ refreshenv
 
 # Upgrade pip to latest version
 Write-Log "Upgrading pip..."
-python.exe -m pip install --upgrade pip
+python.exe -m uv pip install --upgrade pip
 
 # ---------------------------
 # Check Docker Desktop status
