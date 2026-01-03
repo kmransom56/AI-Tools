@@ -6,12 +6,16 @@ services:
     image: ai-toolkit:latest
     container_name: ai-toolkit
     working_dir: /app
-    # To expose the web UI on the host, uncomment and set a mapping such as "8000:8000"
+    # To expose the web UI on the host, uncomment and set a mapping such as "8000:8000" or use the port manager
     # ports:
     #  - "8000:8000"
     volumes:
       - ./config:/app/config
       - ./workspace:/app/workspace
+      # Mount repo root to /workspace so cagent examples are accessible
+      - ./:/workspace:rw
+      # Mount docker socket so the container can create other containers for cagent
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
