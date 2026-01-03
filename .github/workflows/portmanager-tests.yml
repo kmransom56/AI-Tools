@@ -8,6 +8,9 @@ on:
 
 jobs:
   portmanager-tests:
+    # Run on pushes to main, or on PRs where source branch starts with "feat/"
+    if: >-
+      github.event_name == 'push' || (github.event_name == 'pull_request' && startsWith(github.head_ref, 'feat/'))
     runs-on: windows-latest
     steps:
       - name: Checkout
