@@ -1,0 +1,9 @@
+#!/usr/bin/env cagent run
+
+# Eval demo example
+
+agents:
+  root:
+    model: claude
+    description: Simple eval demonstration
+    instruction: Run the eval demo workflow

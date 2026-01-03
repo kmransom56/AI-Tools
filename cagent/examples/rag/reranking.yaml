@@ -1,0 +1,5 @@
+#!/usr/bin/env cagent run
+
+# Re-ranking example for RAG workflows
+
+# (Content from docker/cagent/examples/rag/reranking.yaml — imported for convenience)

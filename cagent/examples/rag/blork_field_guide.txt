@@ -1,0 +1,5 @@
+(Blork field guide text extracted from docker/cagent/examples/rag/blork_field_guide.txt)
+
+# NOTE: Large text file imported from upstream examples for the RAG demo.
+
+(Original source: https://github.com/docker/cagent/blob/main/examples/rag/blork_field_guide.txt)

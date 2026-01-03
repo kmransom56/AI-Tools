@@ -1,0 +1,16 @@
+#!/usr/bin/env cagent run
+
+# Example demonstrating environment variable placeholder expansion in commands
+#
+# This example shows how to use $VARIABLE_NAME or ${VARIABLE_NAME} placeholders
+# in command definitions, which are automatically replaced with environment variable
+# values when the agent is loaded.
+#
+# Usage:
+#   export USER=alice
+#   export PROJECT_NAME=myproject
+#   export ENVIRONMENT=production
+#
+#   cagent run env_placeholders.yaml -c greet
+#   cagent run env_placeholders.yaml -c analyze
+## (truncated for brevity in commit; original file preserved upstream)
