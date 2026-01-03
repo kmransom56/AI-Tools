@@ -1,0 +1,46 @@
+# Adapted from Docker cagent professional examples: https://github.com/docker/cagent/tree/main/examples/professional
+# This example is adapted and defaults to safe settings (dry_run: true, limited iterations)
+
+agents:
+  root:
+    model: openai/gpt-4o
+    description: "Main coordinator that breaks feature requests into tasks and delegates to helpers"
+    instruction: |
+      You are the root coordinator. For feature requests or bug reports:
+      - Break the work into discrete tasks (design, implement, test, docs)
+      - Delegate specific tasks to named helper agents
+      - Coordinate execution and assemble final PR description
+    sub_agents: ["implementer","reviewer","ci-helper"]
+
+  implementer:
+    model: openai/gpt-4o
+    description: "Implements code changes and unit tests"
+    instruction: |
+      You are a pragmatic implementer: make minimal, well-tested changes, add unit tests, and provide concise commit messages.
+
+  reviewer:
+    model: openai/gpt-4o
+    description: "Code reviewer agent that runs static analysis and suggests improvements"
+    instruction: |
+      Review the proposed changes, run linters/tests, and provide actionable feedback. If issues are minor, propose concrete edits.
+
+  ci-helper:
+    model: openai/gpt-4o
+    description: "Runs CI-style checks and summarizes results"
+    instruction: |
+      Simulate CI checks (lint, unit tests) and summarize failures with recommended fixes.
+
+models:
+  openai/gpt-4o:
+    provider: openai
+    model: gpt-4o
+    max_tokens: 64000
+
+# Safety & operational defaults
+settings:
+  dry_run: true      # Default to dry-run to avoid auto-commits
+  max_iterations: 5  # Keep agent loops short to limit unintended changes
+
+metadata:
+  name: professional
+  description: "Professional multi-agent team for larger feature or bug workflows (dry-run default)"

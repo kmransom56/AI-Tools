@@ -1,0 +1,53 @@
+name: cagent dogfood
+
+on:
+  workflow_dispatch:
+    inputs:
+      config_path:
+        description: 'Path to agent config (relative to repo)'
+        required: false
+        default: 'cagent/examples/golang_developer.yaml'
+      live:
+        description: 'Run without --dry-run (dangerous)'
+        required: false
+        default: 'false'
+
+jobs:
+  dogfood:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Docker socket
+        id: check-sock
+        run: |
+          if [ ! -S /var/run/docker.sock ]; then echo "no-sock=true" >> $GITHUB_OUTPUT; else echo "no-sock=false" >> $GITHUB_OUTPUT; fi
+
+      - name: Run cagent (dry-run)
+        if: steps.check-sock.outputs.no-sock == 'false'
+        env:
+          CONFIG_PATH: ${{ github.event.inputs.config_path }}
+          LIVE: ${{ github.event.inputs.live }}
+        run: |
+          mkdir -p artifacts
+          echo "Using config: $CONFIG_PATH, live: $LIVE"
+          if [ "$LIVE" = 'true' ]; then
+            echo "Running LIVE (no --dry-run)"
+            docker run --rm -v $GITHUB_WORKSPACE:/work -w /work docker/cagent:latest run "$CONFIG_PATH" 2>&1 | tee artifacts/cagent-run.log || true
+          else
+            echo "Running dry-run"
+            docker run --rm -v $GITHUB_WORKSPACE:/work -w /work docker/cagent:latest run "$CONFIG_PATH" --dry-run 2>&1 | tee artifacts/cagent-run.log || true
+          fi
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cagent-run-logs
+          path: artifacts/cagent-run.log
+
+      - name: Skip (no Docker socket)
+        if: steps.check-sock.outputs.no-sock == 'true'
+        run: echo "Runner has no Docker socket; manual dogfood requires a runner with Docker."

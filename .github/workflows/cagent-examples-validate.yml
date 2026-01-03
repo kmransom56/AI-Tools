@@ -1,0 +1,62 @@
+name: cagent examples validate
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ feat/cagent ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Validate examples (YAML + safety)
+        run: |
+          python - <<'PY'
+import glob, sys, yaml
+ok = True
+for path in glob.glob('cagent/examples/*.yaml'):
+    print('Checking', path)
+    try:
+        data = yaml.safe_load(open(path))
+    except Exception as e:
+        print('  YAML parse error:', e)
+        ok = False
+        continue
+    # Safety checks
+    settings = data.get('settings') or {}
+    dry = settings.get('dry_run')
+    iters = settings.get('max_iterations')
+    if dry is not True:
+        print('  ERROR: examples must default to dry_run: true')
+        ok = False
+    if iters is None:
+        print('  WARNING: max_iterations not set; recommended <= 10')
+    else:
+        if iters > 10:
+            print('  ERROR: max_iterations too high (>', iters, ')')
+            ok = False
+if not ok:
+    sys.exit(1)
+print('All examples passed basic validation')
+PY
+
+      - name: Optional: Run dry-run in Docker (if socket available)
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          if [ -S /var/run/docker.sock ]; then
+            for f in cagent/examples/*.yaml; do
+              echo "Running dry-run for $f"
+              docker run --rm -v $PWD:/work -w /work docker/cagent:latest run "$f" --dry-run > /tmp/cagent-run.log 2>&1 || true
+              tail -n +1 /tmp/cagent-run.log | sed -n '1,200p'
+            done
+          else
+            echo 'No Docker socket available; skipping runtime check.'
+          fi
