@@ -1,0 +1,55 @@
+name: PortManager - Normalize & Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  portmanager-tests:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell Execution Policy
+        run: |
+          Set-ExecutionPolicy RemoteSigned -Scope Process -Force
+        shell: pwsh
+
+      - name: Create artifacts directory
+        run: |
+          New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+        shell: pwsh
+
+      - name: Create sample legacy registry
+        run: |
+          $regPath = Join-Path $env:USERPROFILE 'AI-Tools\port-registry.json'
+          New-Item -ItemType Directory -Path (Split-Path $regPath) -Force | Out-Null
+          $sample = @(
+            @{ ApplicationName = 'existing-app'; Port = 11010 },
+            @{ ApplicationName = 'another-app'; Port = 11011 }
+          ) | ConvertTo-Json
+          Set-Content -Path $regPath -Value $sample -Encoding UTF8
+          Write-Output "Created sample registry at $regPath"
+        shell: pwsh
+
+      - name: Run normalization script
+        run: |
+          & .\scripts\portmanager\normalize-port-registry.ps1 -Path "$env:USERPROFILE\AI-Tools\port-registry.json" -Force
+        shell: pwsh
+
+      - name: Run PortManager tests
+        run: |
+          & .\scripts\portmanager\run-portmanager-tests.ps1
+        shell: pwsh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portmanager-test-logs
+          path: |
+            artifacts/*.log
+            artifacts/backups/*.json
