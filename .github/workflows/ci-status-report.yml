@@ -13,17 +13,24 @@ jobs:
       pull-requests: write
       checks: read
     steps:
-      - name: Comment on PRs or commit for completed workflow run
+      - name: Comment on PRs or commit for completed workflow run (non-success only)
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const run = context.payload.workflow_run;
+            const conclusion = (run.conclusion || '').toLowerCase();
+
+            // Only report when the run is not successful
+            if (conclusion === 'success') {
+              core.info('Workflow run succeeded; skipping status report.');
+              return;
+            }
+
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
             const name = run.name || run.workflow_id || 'workflow';
-            const conclusion = run.conclusion || 'unknown';
             const url = run.html_url;
             const sha = run.head_sha;
             const branch = run.head_branch || '';
