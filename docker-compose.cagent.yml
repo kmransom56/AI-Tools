@@ -1,0 +1,21 @@
+# Optional cagent compose fragment - use with:
+# docker compose -f docker-compose.yml -f docker-compose.cagent.yml up -d
+
+services:
+  cagent:
+    image: docker/cagent:latest
+    container_name: cagent
+    environment:
+      - CAGENT_BACKEND_URL=${CAGENT_BACKEND_URL}
+      - CAGENT_TOKEN=${CAGENT_TOKEN}
+    volumes:
+      # Read-only access to Docker socket to inspect containers (sensitive)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./cagent/config:/etc/cagent:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # NOTE: cagent may require configuration in /etc/cagent; see docs/CAGENT.md
