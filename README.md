@@ -57,3 +57,10 @@ docker compose up --build -d
 ```
 
 If you expose ports, ensure the mappings are set in `docker-compose.yml` (the file contains commented examples). The new CI job also validates `docker compose config` on PRs and pushes to `main` to catch these issues early.
+
+## Optional: cagent (docker/cagent)
+To enable Docker's `cagent` for local container metadata/metrics collection, use the optional compose fragment:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.cagent.yml up -d --build
+```
+See `docs/CAGENT.md` for configuration, security notes, and troubleshooting.
