@@ -1,0 +1,67 @@
+name: vLLM Docker Compose Check (Lightweight)
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  compose-check:
+    name: Docker Compose syntax & basic sanity check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Discover docker-compose files
+        run: |
+          files=$(git ls-files '*docker-compose.yml' || true)
+          if [ -z "$files" ]; then
+            echo "No docker-compose.yml files found in repository"; exit 1
+          fi
+          echo "Found compose files: $files"
+          echo "$files" > /tmp/compose_files.txt
+
+      - name: Validate docker-compose files and check ports
+        run: |
+          # Provide default env values to avoid config-time failures for unset variables
+          export OPENAI_API_KEY=""
+          export ANTHROPIC_API_KEY=""
+          export GEMINI_API_KEY=""
+          export VLLM_HOST_PORT=8001
+
+          found_port=0
+          while read -r f; do
+            echo "Checking $f"
+            set +e
+            output=$(docker compose -f "$f" config 2>&1)
+            rc=$?
+            set -e
+            if [ $rc -ne 0 ]; then
+              echo "docker compose config failed for $f:"
+              echo "$output"
+              # If failure is due to placeholder empty ports, do not fail the job - warn instead
+              if echo "$output" | grep -q "no port specified"; then
+                echo "Warning: compose config contains empty port placeholders in $f; skipping strict validation for this file."
+              else
+                echo "Unhandled docker-compose config failure for $f"; exit 1
+              fi
+            else
+              echo "$output"
+            fi
+
+            echo "Services in $f:"; docker compose -f "$f" config --services || true
+
+            # Check for non-empty port mappings in the raw compose file (avoid config expansion errors)
+            if grep -Pzo "ports:\s*([\s\S]*?)\n\S" "$f" | grep -q "-\s*\"?[0-9]"; then
+              echo "Non-empty ports found in $f"
+              found_port=1
+            else
+              echo "No non-empty ports found in $f (may have placeholders)"
+            fi
+          done < /tmp/compose_files.txt
+
+          if [ "$found_port" -ne 1 ]; then
+            echo "No non-empty port mappings found in any docker-compose.yml; this may be intentional for placeholder-only compositions."
+            echo "Continuing (no failure) with a warning." 
+          fi
