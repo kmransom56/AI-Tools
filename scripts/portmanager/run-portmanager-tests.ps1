@@ -9,7 +9,9 @@ $artifacts = Join-Path $PSScriptRoot "..\..\artifacts"
 if (-not (Test-Path $artifacts)) { New-Item -ItemType Directory -Path $artifacts -Force | Out-Null }
 $logFile = Join-Path $artifacts ("portmanager-test-{0:yyyyMMdd-HHmmss}.log" -f (Get-Date))
 
-function Log { param($m) Add-Content -Path $logFile -Value ("[{0}] {1}" -f (Get-Date -Format 'o'), $m) }
+function Log { param($m) Add-Content -Path $logFile -Value (("[{0}] {1}" -f (Get-Date -Format 'o'), $m)) }
+
+$CI = [bool]($env:GITHUB_ACTIONS -or $env:CI)
 
 try {
     Log "Starting PortManager tests"
@@ -21,11 +23,11 @@ try {
 
     Log "Checking Get-UsedPorts"
     $used = Get-UsedPorts
-    Log ("Get-UsedPorts returned {0} ports" -f ($used | Measure-Object | Select-Object -ExpandProperty Count))
+    Log (("Get-UsedPorts returned {0} ports" -f ($used | Measure-Object | Select-Object -ExpandProperty Count)))
 
     Log "Checking Get-AvailablePort (auto-register) for 'test-app'"
     $port = Get-AvailablePort -ApplicationName 'test-app' -AutoRegister -ErrorAction Stop
-    Log ("Get-AvailablePort returned: $port")
+    Log (("Get-AvailablePort returned: {0}" -f $port))
 
     Log "Show-PortRegistry output:" 
     $registry = Show-PortRegistry 2>&1 | Out-String
@@ -33,14 +35,14 @@ try {
 
     Log "Verifying registration exists"
     $appPort = Get-ApplicationPort -ApplicationName 'test-app'
-    if ($appPort) { Log ("Application 'test-app' registered at port: $appPort") } else { Log "Application 'test-app' not found in registry" }
+    if ($appPort) { Log (("Application 'test-app' registered at port: {0}" -f $appPort)) } else { Log "Application 'test-app' not found in registry" }
 
     Log "SUCCESS"
-    Start-Process notepad.exe -ArgumentList $logFile
+    if (-not $CI) { Start-Process notepad.exe -ArgumentList $logFile }
     exit 0
 } catch {
-    Log ("ERROR: $($_.Exception.Message)")
+    Log (("ERROR: $($_.Exception.Message)"))
     Log "StackTrace: $($_.Exception.StackTrace)"
-    Start-Process notepad.exe -ArgumentList $logFile
+    if (-not $CI) { Start-Process notepad.exe -ArgumentList $logFile }
     exit 1
 }
