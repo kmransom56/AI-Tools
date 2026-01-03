@@ -18,6 +18,7 @@ cd path\to\AI-Tools\deploy
 ```
 
 - The script will try to install NSSM via Chocolatey if available, otherwise it will download and extract NSSM to `C:\tools\nssm`.
+- If the primary release download (from `https://nssm.cc/release/`) fails, the installer will fall back to the Git mirror at `https://git.nssm.cc/nssm/nssm` as an alternate download source.
 - Logs are written to `C:\opt\ai-toolkit\logs\stdout.log` and `stderr.log`.
 
 ## Uninstall
