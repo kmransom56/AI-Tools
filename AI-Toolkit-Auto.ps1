@@ -1,4 +1,3 @@
-﻿
 # AI-Toolkit-Auto.ps1
 # Combined Installer + Launcher for AI Development Toolkit
 
@@ -29,11 +28,11 @@ Function Write-ToolLog {
 # Admin Check
 # ---------------------------
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Output "`nâŒ ADMINISTRATOR PRIVILEGES REQUIRED"
+    Write-Output "`n[ERROR] ADMINISTRATOR PRIVILEGES REQUIRED"
     Write-Output "`nThis script needs to:"
-    Write-Output "  â€¢ Install Chocolatey"
-    Write-Output "  â€¢ Install software (Node.js, Python, Git, Docker, VS Code)"
-    Write-Output "  â€¢ Start Docker Desktop"
+    Write-Output "  - Install Chocolatey"
+    Write-Output "  - Install software (Node.js, Python, Git, Docker, VS Code)"
+    Write-Output "  - Start Docker Desktop"
     Write-Output "`nPlease run PowerShell as Administrator and try again."
     Write-Output "`nAlternatively, if everything is already installed, use:"
     Write-Output "  .\Launch-AI-Tools-NoAdmin.ps1"
@@ -70,7 +69,7 @@ if (-not $OPENAI -or -not $ANTHROPIC -or -not $GEMINI) {
 }
 
 if (-not $OPENAI -or -not $ANTHROPIC -or -not $GEMINI) {
-    Write-ToolLog -Message "âŒ Missing API keys! Please set OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY."
+    Write-ToolLog -Message "[ERROR] Missing API keys! Please set OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY."
     Write-Output "`nYou can set them in one of these ways:"
     Write-Output "1. Windows Environment Variables (permanent)"
     Write-Output "2. Create a .env file in this directory with:"
@@ -82,7 +81,7 @@ if (-not $OPENAI -or -not $ANTHROPIC -or -not $GEMINI) {
     exit 1
 }
 
-Write-ToolLog -Message "âœ… API keys detected. Starting installation..."
+Write-ToolLog -Message "[OK] API keys detected. Starting installation..."
 
 # ---------------------------
 # Docker Hub Authentication (Optional)
@@ -113,9 +112,9 @@ Write-ToolLog -Message "Installing Node.js, Python, Git, Docker Desktop, VS Code
 choco install nodejs python git docker-desktop vscode -y
 refreshenv
 
-# Upgrade pip to latest version
+# Upgrade pip to latest version (fixed)
 Write-ToolLog -Message "Upgrading pip..."
-python.exe -m uv pip install --upgrade pip
+python.exe -m pip install --upgrade pip
 
 # ---------------------------
 # Check Docker Desktop status
@@ -123,12 +122,12 @@ python.exe -m uv pip install --upgrade pip
 Write-ToolLog -Message "Checking Docker Desktop status..."
 $dockerProcess = Get-Process -Name "Docker Desktop" -ErrorAction SilentlyContinue
 if (-not $dockerProcess) {
-    Write-ToolLog -Message "Docker Desktop is not running. Starting Docker Desktop..."
+    Write-ToolLog -Message "[WARN] Docker Desktop is not running. Starting Docker Desktop..."
     Start-Process "C:\Program Files\Docker\Docker\Docker Desktop.exe"
     Write-ToolLog -Message "Waiting for Docker to initialize..."
     Start-Sleep -Seconds 45
 } else {
-    Write-ToolLog -Message "Docker Desktop is already running."
+    Write-ToolLog -Message "[OK] Docker Desktop is already running."
 }
 
 # Wait for Docker daemon to be ready
@@ -138,7 +137,7 @@ $retryCount = 0
 while ($retryCount -lt $maxRetries) {
     try {
         docker info | Out-Null
-        Write-ToolLog -Message "âœ… Docker daemon is ready"
+        Write-ToolLog -Message "[OK] Docker daemon is ready"
         break
     } catch {
         $retryCount++
@@ -163,16 +162,16 @@ try {
             Write-ToolLog -Message "Building Void (this may take several minutes)..."
             npm install
             npm run build
-            Write-ToolLog -Message "âœ… Void installed successfully"
+            Write-ToolLog -Message "[OK] Void installed successfully"
         } else {
-            Write-ToolLog -Message "âŒ Failed to clone Void repository"
+            Write-ToolLog -Message "[ERROR] Failed to clone Void repository"
         }
     } else {
-        $logMessage = "â„¹ Void already installed, skipping"
+        $logMessage = "[INFO] Void already installed, skipping"
         Write-ToolLog -Message $logMessage
     }
 } catch {
-    Write-ToolLog -Message "âŒ Void installation error: $($_.Exception.Message)"
+    Write-ToolLog -Message "[ERROR] Void installation error: $($_.Exception.Message)"
 }
 
 # ---------------------------
@@ -211,7 +210,7 @@ try {
     # Note: opencode-cli and chatgpt-shell-cli may not be publicly available
     Write-ToolLog -Message "Note: Some CLI tools (opencode, chatgpt-shell-cli) may not be available"
 
-    Write-ToolLog -Message "âœ… Available CLI tools installed"
+    Write-ToolLog -Message "[OK] Available CLI tools installed"
 } catch {
     Write-ToolLog -Message "WARNING: Some CLI tools may have failed: $($_.Exception.Message)"
 }
@@ -357,24 +356,50 @@ Set-Content -Path "$env:USERPROFILE\AI-Tools\docker-compose.yml" -Value $compose
 
 cd "$env:USERPROFILE\AI-Tools"
 
+# Determine compose client: prefer 'docker compose' (Docker CLI with Compose V2), fall back to 'docker-compose'
+$composeClient = $null
+if (Get-Command -Name docker -ErrorAction SilentlyContinue) {
+    try {
+        docker compose version >$null 2>&1
+        $composeClient = 'docker compose'
+    } catch {
+        # docker exists but compose subcommand may not be present
+    }
+}
+if (-not $composeClient -and (Get-Command -Name docker-compose -ErrorAction SilentlyContinue)) {
+    $composeClient = 'docker-compose'
+}
+if (-not $composeClient) {
+    Write-ToolLog -Message "[ERROR] Docker Compose not found. Please install Docker Compose or use a Docker CLI with Compose support."
+    exit 1
+}
+
 Write-ToolLog -Message "Building custom AI toolkit Docker image (this may take a few minutes)..."
-docker-compose build --no-cache
+if ($composeClient -eq 'docker compose') {
+    docker compose build --no-cache
+} else {
+    docker-compose build --no-cache
+}
 
 Write-ToolLog -Message "Starting AI toolkit container..."
-docker-compose up -d
+if ($composeClient -eq 'docker compose') {
+    docker compose up -d
+} else {
+    docker-compose up -d
+}
 
-Write-ToolLog -Message "âœ… Docker containers started!"
+Write-ToolLog -Message "[OK] Docker containers started!"
 
 # ---------------------------
 # Post-Install Verification
 # ---------------------------
-Write-ToolLog -Message "ðŸ” Verifying installations..."
+Write-ToolLog -Message "[INFO] Verifying installations..."
 
 # Check Void
 if (Test-Path "$env:USERPROFILE\void") {
-    Write-ToolLog -Message "âœ” Void installed successfully."
+    Write-ToolLog -Message "[OK] Void installed successfully."
 } else {
-    Write-ToolLog -Message "â„¹ Void not installed (optional component)"
+    Write-ToolLog -Message "[INFO] Void not installed (optional component)"
 }
 
 # Check TabbyML container
@@ -389,36 +414,36 @@ if ($tabbyStatus) {
             break
         }
     }
-    Write-ToolLog -Message "âœ” TabbyML container running: $tabbyStatus"
+    Write-ToolLog -Message "[OK] TabbyML container running: $tabbyStatus"
     Write-ToolLog -Message "  Access TabbyML at: http://localhost:$tabbyPort"
 } else {
-    Write-ToolLog -Message "â„¹ TabbyML container not running (check docker-compose logs)"
+    Write-ToolLog -Message "[INFO] TabbyML container not running (check compose logs)"
 }
 
 # Check Docker containers
 $aiToolkitStatus = docker ps --filter "name=ai-toolkit" --format "{{.Status}}"
 if ($aiToolkitStatus) {
-    Write-ToolLog -Message "âœ” AI Toolkit container running: $aiToolkitStatus"
+    Write-ToolLog -Message "[OK] AI Toolkit container running: $aiToolkitStatus"
 } else {
     Write-ToolLog -Message "WARNING: AI Toolkit container not running"
 }
 
 # Verify packages inside container
 Write-ToolLog -Message "Verifying AI packages in container..."
-docker exec ai-toolkit python -c "import openai, transformers, anthropic; print('âœ… All AI packages loaded successfully')" 2>&1 | ForEach-Object { Write-ToolLog $_ }
+docker exec ai-toolkit python -c "import openai, transformers, anthropic; print('[OK] All AI packages loaded successfully')" 2>&1 | ForEach-Object { Write-ToolLog $_ }
 
 # Check CLI tools
 $cliTools = @("sgpt", "gpt")
 foreach ($tool in $cliTools) {
     if (Get-Command $tool -ErrorAction SilentlyContinue) {
-        Write-ToolLog -Message "âœ” $tool is installed"
+        Write-ToolLog -Message "[OK] $tool is installed"
     } else {
-        Write-ToolLog -Message "â„¹ $tool available in Docker container: docker exec -it ai-toolkit $tool"
+        Write-ToolLog -Message "[INFO] $tool available in Docker container: docker exec -it ai-toolkit $tool"
     }
 }
 
 # Check VS Code extensions
-Write-ToolLog -Message "âœ” VS Code with Continue and GitHub Copilot extensions installed"
+Write-ToolLog -Message "[OK] VS Code with Continue and GitHub Copilot extensions installed"
 
 # Print usage instructions
 Write-ToolLog -Message ""
@@ -442,7 +467,7 @@ Write-ToolLog -Message "Launching AI Tools..."
 if (Test-Path "$env:USERPROFILE\void") {
     Write-ToolLog -Message "Launching Void editor..."
     Start-Process "npm.cmd" -ArgumentList "start" -WorkingDirectory "$env:USERPROFILE\void"
-    Write-ToolLog -Message "âœ… Void editor launched"
+    Write-ToolLog -Message "[OK] Void editor launched"
 } else {
     Write-ToolLog -Message "WARNING: Skipping Void launch (not installed)"
 }
@@ -462,7 +487,7 @@ if ($tabbyRunning -eq "tabbyml") {
     Write-ToolLog -Message "Launching TabbyML in browser..."
     Start-Sleep -Seconds 5  # Wait for TabbyML to be ready
     Start-Process "http://localhost:$tabbyPort"
-    Write-ToolLog -Message "âœ… TabbyML accessible at http://localhost:$tabbyPort"
+    Write-ToolLog -Message "[OK] TabbyML accessible at http://localhost:$tabbyPort"
     Write-ToolLog -Message "  Note: TabbyML can be integrated with Void and other editors"
 } else {
     Write-ToolLog -Message "WARNING: TabbyML container not running. Check with: docker ps -a | findstr tabbyml"
@@ -498,10 +523,3 @@ if (Get-Command "chatgpt" -ErrorAction SilentlyContinue) {
 if (Get-Command "gpt" -ErrorAction SilentlyContinue) {
     Start-Process "cmd.exe" -ArgumentList "/k", "gpt", "Create a Dockerfile for Node.js app"
 }
-
-Write-ToolLog -Message "âœ… All available tools launched successfully!"
-Write-Host "`nâœ… Full installation and launch complete. Log saved at: $logPath" -ForegroundColor Cyan
-Write-Host "`nPress any key to close this window..." -ForegroundColor Yellow
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-
-
