@@ -25,3 +25,31 @@ This toolkit installs and configures multiple AI-powered development tools on Wi
 ```powershell
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\Install-AI-Tools.ps1
+```
+
+## Running locally (recommended) ✅
+- Copy `.env.example` to `.env` and fill in your API keys:
+```powershell
+Copy-Item .env.example .env
+# Edit .env and add keys
+notepad .env
+```
+
+- Example port suggestions (uncomment and set in `docker-compose.yml` if you want services exposed):
+  - **ai-toolkit** (web UI / local API): `8000:8000`
+  - **tabbyml** (web UI): `3000:3000`
+
+- To validate your compose file before building (CI also runs this):
+```powershell
+# Local validation
+docker compose -f docker-compose.yml config
+```
+
+- To build and run:
+```powershell
+docker compose up --build
+# or run detached
+docker compose up --build -d
+```
+
+If you expose ports, ensure the mappings are set in `docker-compose.yml` (the file contains commented examples). The new CI job also validates `docker compose config` on PRs and pushes to `main` to catch these issues early.
