@@ -1,0 +1,67 @@
+name: vLLM Self-Hosted GPU Smoke Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Model name to test (HuggingFace format)'
+        required: false
+        default: 'gpt2'
+      gpu_memory_utilization:
+        description: 'GPU memory utilization fraction'
+        required: false
+        default: '0.9'
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: vllm-self-hosted-gpu
+  cancel-in-progress: false
+
+jobs:
+  gpu-smoke-test:
+    name: GPU Smoke Test
+    runs-on: [self-hosted, gpu, nvidia]
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare .env
+        run: |
+          cp powershell-signer/vllm_config.env.example powershell-signer/.env
+          echo "MODEL_NAME=${{ github.event.inputs.model_name || github.event.inputs.model_name || 'gpt2' }}" >> powershell-signer/.env
+          echo "GPU_MEMORY_UTILIZATION=${{ github.event.inputs.gpu_memory_utilization || github.event.inputs.gpu_memory_utilization || '0.9' }}" >> powershell-signer/.env
+        shell: bash
+
+      - name: Start vLLM (Docker Compose)
+        run: |
+          cd powershell-signer
+          docker compose up -d --build
+        shell: bash
+
+      - name: Wait for /health
+        run: |
+          set -e
+          for i in {1..30}; do
+            if curl -sSf http://localhost:8001/health | grep -q '"status"'; then
+              echo "Health OK"; exit 0
+            fi
+            echo "Waiting for health... ($i)"; sleep 5
+          done
+          echo "Service did not become healthy"; docker compose logs --tail 200 || true; exit 1
+        shell: bash
+
+      - name: Run a small completion test
+        run: |
+          curl -s -X POST http://localhost:8001/v1/completions -H 'Content-Type: application/json' -d '{"prompt":"Hello world","max_tokens":16,"temperature":0.7}' | jq .
+        shell: bash
+
+      - name: Teardown
+        if: always()
+        run: |
+          cd powershell-signer
+          docker compose down --volumes --remove-orphans
+        shell: bash
