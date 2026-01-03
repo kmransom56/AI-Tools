@@ -1,5 +1,6 @@
-
 # AI Development Toolkit
+
+[![PortManager - Normalize & Tests](https://github.com/kmransom56/AI-Tools/actions/workflows/portmanager-tests.yml/badge.svg)](https://github.com/kmransom56/AI-Tools/actions/workflows/portmanager-tests.yml)
 
 ## Overview
 This toolkit installs and configures multiple AI-powered development tools on Windows:
