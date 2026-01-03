@@ -61,13 +61,25 @@ function Ensure-NSSM {
     $tmp = Join-Path $env:TEMP "nssm-zip-$(Get-Random)"
     New-Item -ItemType Directory -Path $tmp -Force | Out-Null
     $nssmZip = Join-Path $tmp 'nssm.zip'
-    $url = 'https://nssm.cc/release/nssm-2.24.zip'
-    Write-Host "Downloading NSSM from $url"
-    try {
-        Invoke-WebRequest -Uri $url -OutFile $nssmZip -UseBasicParsing -ErrorAction Stop
-    } catch {
-        throw "Failed to download NSSM from $url: $($_.Exception.Message)"
+
+    $possibleUrls = @(
+        'https://nssm.cc/release/nssm-2.24.zip',
+        'https://git.nssm.cc/nssm/nssm/archive/refs/heads/master.zip'
+    )
+
+    $downloaded = $false
+    foreach ($url in $possibleUrls) {
+        Write-Host "Attempting download from $url"
+        try {
+            Invoke-WebRequest -Uri $url -OutFile $nssmZip -UseBasicParsing -ErrorAction Stop
+            $downloaded = $true
+            break
+        } catch {
+            Write-Host "Download failed from $url: $($_.Exception.Message)"
+        }
     }
+    if (-not $downloaded) { throw "Failed to download NSSM from any known source." }
+
     Expand-Archive -Path $nssmZip -DestinationPath $tmp -Force
     # Find nssm.exe in extracted tree
     $found = Get-ChildItem -Path $tmp -Filter nssm.exe -Recurse -File | Select-Object -First 1
