@@ -21,7 +21,7 @@ jobs:
       - name: Start docker compose with cagent
         if: steps.check.outputs.no-sock == 'false'
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.cagent.yml up -d --build
+          docker compose up -d --build
 
       - name: Wait for cagent to become healthy
         if: steps.check.outputs.no-sock == 'false'
@@ -32,7 +32,7 @@ jobs:
             if [[ $status == '"healthy"' ]]; then echo "cagent healthy"; exit 0; fi
             sleep 5
           done
-          docker compose -f docker-compose.yml -f docker-compose.cagent.yml logs cagent || true
+          docker compose logs cagent || true
           exit 1
 
       - name: Skip test (no Docker socket)
