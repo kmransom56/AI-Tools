@@ -8,11 +8,16 @@ on:
 
 jobs:
   portmanager-tests:
-    # Run on pushes to main, or on PRs where source branch starts with "feat/", "fix/", or "hotfix/"
+    # Run on pushes to main, or on PRs where source branch starts with one of the allowed prefixes
     if: >-
       github.event_name == 'push' || (
         github.event_name == 'pull_request' && (
-          startsWith(github.head_ref, 'feat/') || startsWith(github.head_ref, 'fix/') || startsWith(github.head_ref, 'hotfix/')
+          startsWith(github.head_ref, 'feat/') ||
+          startsWith(github.head_ref, 'fix/') ||
+          startsWith(github.head_ref, 'hotfix/') ||
+          startsWith(github.head_ref, 'chore/') ||
+          startsWith(github.head_ref, 'docs/') ||
+          startsWith(github.head_ref, 'release/')
         )
       )
     runs-on: windows-latest
