@@ -1,6 +1,7 @@
 # AI Development Toolkit
 
-[![PortManager - Normalize & Tests](https://github.com/kmransom56/AI-Tools/actions/workflows/portmanager-tests.yml/badge.svg)](https://github.com/kmransom56/AI-Tools/actions/workflows/portmanager-tests.yml)
+[![PortManager - Normalize & Tests](https://github.com/kmransom56/AI-Tools/actions/workflows/portmanager-tests.yml/badge.svg)](https://github.com/kmransom56/AI-Tools/actions/workflows/portmanager-tests.yml)  
+[![Docker Compose Validate](https://github.com/kmransom56/AI-Tools/actions/workflows/docker-compose-validate.yml/badge.svg)](https://github.com/kmransom56/AI-Tools/actions/workflows/docker-compose-validate.yml)
 
 ## Overview
 This toolkit installs and configures multiple AI-powered development tools on Windows:
