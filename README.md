@@ -28,7 +28,10 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 .\Install-AI-Tools.ps1
 ```
 
-## Running locally (recommended) ✅
+## Running on Windows ✅
+For production/long-running deployments on Windows we recommend running the web service as a Windows service using **NSSM**. See `docs/RUNNING-WINDOWS.md` for a step-by-step guide and an installer script: `deploy/install-ai-toolkit-nssm.ps1`.
+
+## Running locally (recommended)
 - Copy `.env.example` to `.env` and fill in your API keys:
 ```powershell
 Copy-Item .env.example .env
@@ -37,7 +40,7 @@ notepad .env
 ```
 
 - Example port suggestions (uncomment and set in `docker-compose.yml` if you want services exposed):
-  - **ai-toolkit** (web UI / local API): `8000:8000`
+  - **ai-toolkit** (web UI / local API): `8000:8000` or `11500:11500` (local dev)
   - **tabbyml** (web UI): `3000:3000`
 
 - To validate your compose file before building (CI also runs this):
