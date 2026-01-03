@@ -19,6 +19,20 @@ Provide a concise, Windows-first, Docker-based AI development toolkit that bundl
 - **Run examples in dry-run mode** (where available) before enabling full runs. Many imported examples default to `dry_run` or small `max_iterations` in CI validation.
 - **Windows-specific steps**: the installer may need Admin privileges to modify PATH, install services with NSSM, or edit system services — test in a VM if unsure.
 
+## ✅ Before you run examples (checklist)
+Follow these short safety checks before running any imported cagent examples or other community-provided workflows:
+
+1. **Confirm API keys** — ensure required keys (OpenAI, Anthropic, Gemini) are set via environment variables or a local `.env` (do not commit them).
+2. **Start in dry-run** — prefer running examples with `dry_run: true` or using the provided wrappers (`cagent/scripts/run-cagent-agent.sh` / `run-cagent-agent.ps1`).
+3. **Verify `CAGENT_DRY_RUN`** — if using wrappers, confirm `CAGENT_DRY_RUN=1` (POSIX) or the PowerShell wrapper sets it by default.
+4. **Check `max_iterations`** — avoid large or unbounded iteration counts; CI enforces `max_iterations <= 10` by default.
+5. **Avoid Docker socket for untrusted examples** — do not mount `/var/run/docker.sock` unless you trust the example; use a VM or ephemeral runner for risky runs.
+6. **Run in isolation** — use a disposable VM, container, or CI runner when running examples that access system resources.
+7. **Read `ORIGIN.md` & example header** — review the original source and any notes in `cagent/examples/ORIGIN.md` and each example's header for required env vars or caveats.
+8. **Iterate cautiously** — start with minimal settings and inspect logs and outputs before increasing scale or enabling persistent side effects.
+
+> **Tip:** We recommend always testing examples locally with `dry_run` and in an isolated environment before allowing any example to interact with your Docker host or cloud credentials.
+
 ## 🚀 Quick Start
 
 ```powershell
