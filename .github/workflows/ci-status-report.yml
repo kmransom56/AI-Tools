@@ -13,7 +13,7 @@ jobs:
       pull-requests: write
       checks: read
     steps:
-      - name: Comment on PRs or commit for completed workflow run (non-success only)
+      - name: Comment on PRs or commit for failed workflow runs
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -21,14 +21,15 @@ jobs:
             const run = context.payload.workflow_run;
             const conclusion = (run.conclusion || '').toLowerCase();
 
-            // Only report when the run is not successful
-            if (conclusion === 'success') {
-              core.info('Workflow run succeeded; skipping status report.');
+            // Only report when the run failed
+            if (conclusion !== 'failure') {
+              core.info('Workflow run did not fail; skipping status report.');
               return;
             }
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            const runId = run.id;
 
             const name = run.name || run.workflow_id || 'workflow';
             const url = run.html_url;
@@ -37,14 +38,54 @@ jobs:
             const started = run.run_started_at || '';
             const updated = run.updated_at || '';
 
-            const body = `**CI Status Report**\n\n` +
+            // Gather failing jobs
+            let failedJobs = [];
+            try {
+              const jobsResp = await github.rest.actions.listJobsForWorkflowRun({ owner, repo, run_id: runId });
+              const jobs = jobsResp.data.jobs || [];
+              failedJobs = jobs.filter(j => (j.conclusion || '').toLowerCase() === 'failure');
+            } catch (err) {
+              core.info(`Error while listing jobs for run ${runId}: ${err.message}`);
+            }
+
+            // Gather artifacts for the workflow run
+            let artifacts = [];
+            try {
+              const artResp = await github.rest.actions.listWorkflowRunArtifacts({ owner, repo, run_id: runId });
+              artifacts = artResp.data.artifacts || [];
+            } catch (err) {
+              core.info(`Error while listing artifacts for run ${runId}: ${err.message}`);
+            }
+
+            let body = `**CI Failure Report**\n\n` +
               `**Workflow:** ${name}\n` +
               `**Conclusion:** **${conclusion}**\n` +
               `**Branch:** ${branch}\n` +
               `**Commit:** ${sha}\n` +
               `**Started:** ${started}\n` +
               `**Completed:** ${updated}\n\n` +
-              `[View workflow run](${url})`;
+              `[View workflow run](${url})\n\n`;
+
+            if (failedJobs.length > 0) {
+              body += `**Failing jobs:**\n`;
+              for (const j of failedJobs) {
+                body += `- ${j.name} - ${j.html_url}\n`;
+              }
+              body += '\n';
+            } else {
+              body += `No individual job failures were reported by the Jobs API.\n\n`;
+            }
+
+            if (artifacts.length > 0) {
+              body += `**Artifacts:**\n`;
+              for (const a of artifacts) {
+                // archive_download_url requires auth to download; include it for convenience
+                body += `- [${a.name}](${a.archive_download_url}) (size: ${a.size_in_bytes} bytes)\n`;
+              }
+              body += '\n';
+            } else {
+              body += `No artifacts uploaded for this run.\n\n`;
+            }
 
             // Find PRs associated with the commit
             let prs = [];
@@ -58,10 +99,10 @@ jobs:
             if (prs.length > 0) {
               for (const pr of prs) {
                 await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
-                core.info(`Posted CI status to PR #${pr.number}`);
+                core.info(`Posted CI failure status to PR #${pr.number}`);
               }
             } else {
               // No PR associated: post a commit comment
               await github.rest.repos.createCommitComment({ owner, repo, commit_sha: sha, body });
-              core.info(`Posted CI status as commit comment to ${sha}`);
+              core.info(`Posted CI failure status as commit comment to ${sha}`);
             }
