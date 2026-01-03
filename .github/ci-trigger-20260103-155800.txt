@@ -1,0 +1,5 @@
+CI trigger file.
+
+This file was added only to trigger GitHub Actions workflows (no functional changes).
+
+Timestamp: 2026-01-03T15:58:00Z
