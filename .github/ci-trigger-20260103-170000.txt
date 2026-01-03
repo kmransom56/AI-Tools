@@ -1,0 +1,2 @@
+Trigger CI: chore(nssm-machine-path) merged into main to run workflows and validate changes
+Timestamp: 2026-01-03T17:00:00Z
