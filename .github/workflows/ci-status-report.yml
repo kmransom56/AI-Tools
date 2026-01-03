@@ -1,0 +1,60 @@
+name: CI Status Reporter
+
+on:
+  workflow_run:
+    types: [completed]
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      checks: read
+    steps:
+      - name: Comment on PRs or commit for completed workflow run
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const run = context.payload.workflow_run;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const name = run.name || run.workflow_id || 'workflow';
+            const conclusion = run.conclusion || 'unknown';
+            const url = run.html_url;
+            const sha = run.head_sha;
+            const branch = run.head_branch || '';
+            const started = run.run_started_at || '';
+            const updated = run.updated_at || '';
+
+            const body = `**CI Status Report**\n\n` +
+              `**Workflow:** ${name}\n` +
+              `**Conclusion:** **${conclusion}**\n` +
+              `**Branch:** ${branch}\n` +
+              `**Commit:** ${sha}\n` +
+              `**Started:** ${started}\n` +
+              `**Completed:** ${updated}\n\n` +
+              `[View workflow run](${url})`;
+
+            // Find PRs associated with the commit
+            let prs = [];
+            try {
+              const res = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: sha });
+              prs = res.data || [];
+            } catch (err) {
+              core.info(`Error while listing PRs for commit ${sha}: ${err.message}`);
+            }
+
+            if (prs.length > 0) {
+              for (const pr of prs) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body });
+                core.info(`Posted CI status to PR #${pr.number}`);
+              }
+            } else {
+              // No PR associated: post a commit comment
+              await github.rest.repos.createCommitComment({ owner, repo, commit_sha: sha, body });
+              core.info(`Posted CI status as commit comment to ${sha}`);
+            }
