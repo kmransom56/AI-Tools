@@ -1,0 +1,15 @@
+#!/usr/bin/env cagent run
+
+agents:
+  root:
+    model: qwen
+    # model: qwen_speculative
+    description: "Pirate-themed AI assistant"
+    instruction: Talk like a pirate
+    commands:
+      demo: "Hey tell me a story about docker containers"
+
+models:
+  qwen:
+    provider: dmr
+    model: ai/qwen3
