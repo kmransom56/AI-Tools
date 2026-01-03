@@ -12,6 +12,7 @@ Notes:
 - Prefers Chocolatey to install NSSM if available; otherwise downloads NSSM release and extracts it under C:\tools\nssm
 - Attempts to auto-detect Python; you can pass -PythonExe to override.
 - Logs are written to: $InstallDir\logs\stdout.log and stderr.log
+- The installer will attempt to add C:\tools\nssm to the Machine PATH so `nssm` is discoverable system-wide.
 #>
 
 param(
@@ -87,6 +88,25 @@ function Ensure-NSSM {
     $dest = 'C:\tools\nssm'
     New-Item -ItemType Directory -Path $dest -Force | Out-Null
     Copy-Item -Path $found.FullName -Destination (Join-Path $dest 'nssm.exe') -Force
+
+    # Ensure Machine PATH contains C:\tools\nssm
+    try {
+        $machinePath = [Environment]::GetEnvironmentVariable('Path','Machine')
+        if ($machinePath -notlike '*C:\tools\nssm*') {
+            $newPath = "$machinePath;C:\tools\nssm"
+            [Environment]::SetEnvironmentVariable('Path', $newPath, 'Machine')
+            Write-Host "Added C:\tools\nssm to Machine PATH. New PATH length: $($newPath.Length)"
+            # update current process PATH for immediate effect
+            $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine')
+            Write-Host "Note: You may need to open a new shell or log off/on for PATH changes to be visible to all processes."
+        } else {
+            Write-Host "C:\tools\nssm already in Machine PATH."
+        }
+    } catch {
+        Write-Host "Failed to update Machine PATH: $($_.Exception.Message)"
+        Write-Host "You can add C:\tools\nssm to your Machine PATH manually if needed."
+    }
+
     return (Join-Path $dest 'nssm.exe')
 }
 
@@ -129,6 +149,18 @@ if ($Action -eq 'install') {
     if (Test-Path $envFile) {
         & $nssmExe set $ServiceName AppEnvironmentExtra "DOTENV=$envFile"
         Write-Host "Note: environment file found at $envFile (not automatically parsed by NSSM). Configure app to read it or set env via NSSM AppEnvironmentExtra."
+    }
+
+    # Verify nssm can be resolved by Get-Command after PATH update
+    try {
+        $nssmCmd = Get-Command nssm -ErrorAction SilentlyContinue
+        if ($nssmCmd) {
+            Write-Host "Verified: 'nssm' command is available at $($nssmCmd.Path)"
+        } else {
+            Write-Host "Warning: 'nssm' command not found in the current shell. You may need to open a new shell for PATH changes to take effect."
+        }
+    } catch {
+        Write-Host "Error verifying nssm command: $($_.Exception.Message)"
     }
 
     Write-Host "Starting service $ServiceName"
