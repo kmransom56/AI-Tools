@@ -1,0 +1,52 @@
+name: Auto-request PR reviewers (fork-safe)
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  request-reviewers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request configured reviewers
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const reviewers = ['alice', 'bob'];
+            const team_reviewers = ['cursor-web', 'copilot-agent'];
+            const allowedPrefixes = ['feat/','fix/','hotfix/','chore/','docs/','release/'];
+
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request in payload — exiting.');
+              return;
+            }
+
+            const headRef = pr.head && pr.head.ref ? pr.head.ref : '';
+            core.info(`PR head ref: ${headRef}`);
+
+            // Skip draft PRs
+            if (pr.draft) {
+              core.info('PR is draft — skipping reviewer request.');
+              return;
+            }
+
+            // Only run for allowed branch prefixes
+            if (!allowedPrefixes.some(p => headRef.startsWith(p))) {
+              core.info(`Skipping: branch '${headRef}' does not match allowed prefixes.`);
+              return;
+            }
+
+            try {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                reviewers,
+                team_reviewers
+              });
+              core.info(`Requested reviewers: ${reviewers.join(', ')}; teams: ${team_reviewers.join(', ')}`);
+            } catch (err) {
+              core.setFailed(`Failed to request reviewers: ${err.message}`);
+            }
