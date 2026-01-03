@@ -40,6 +40,9 @@ RUN pip install --no-cache-dir \
     uvicorn \
     jinja2
 
+# Add docker SDK to allow programmatic control of docker daemon (requires socket mount)
+RUN pip install --no-cache-dir docker
+
 # Create config directory
 RUN mkdir -p /app/config /app/templates
 
