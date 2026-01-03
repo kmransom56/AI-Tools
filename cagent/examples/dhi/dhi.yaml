@@ -1,0 +1,9 @@
+#!/usr/bin/env cagent run
+
+# DHI example file
+
+agents:
+  root:
+    model: claude
+    description: DHI demo agent
+    instruction: Use the included tools to demonstrate DHI usage.

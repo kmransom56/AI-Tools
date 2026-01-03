@@ -1,0 +1,7 @@
+#!/usr/bin/env cagent run
+
+# Hybrid RAG example — combines BM25 + embeddings
+
+# (Content from docker/cagent/examples/rag/hybrid.yaml — imported for convenience)
+
+# NOTE: This file is a direct copy from https://github.com/docker/cagent/tree/main/examples/rag
