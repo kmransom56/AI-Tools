@@ -1,0 +1,51 @@
+name: Auto-delete merged branches
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  delete-merged-branch:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete merged PR head branch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            if (!pr) {
+              core.info('No pull_request payload; exiting.');
+              return;
+            }
+            if (!pr.merged) {
+              core.info('PR not merged; nothing to do.');
+              return;
+            }
+            const headRef = pr.head.ref;
+            // Skip protected branches
+            const protectedBranches = ['main', 'master'];
+            if (protectedBranches.includes(headRef)) {
+              core.info(`Skipping protected branch ${headRef}`);
+              return;
+            }
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${headRef}`,
+              });
+              core.info(`Deleted branch: ${headRef}`);
+              // Optionally leave a comment on the PR
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `Head branch \\`${headRef}\\` was deleted automatically after merge.`,
+              });
+            } catch (err) {
+              core.info(`Failed to delete branch ${headRef}: ${err}`);
+            }
