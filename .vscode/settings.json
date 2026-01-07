@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "Meraki_Curated": {
+      "command": "C:\\Users\\south\\meraki-magic-mcp\\.venv\\Scripts\\fastmcp.exe",
+      "args": ["run", "C:\\Users\\south\\meraki-magic-mcp\\meraki-mcp.py"]
+    },
+    "Meraki_Full_API": {
+      "command": "C:\\Users\\south\\meraki-magic-mcp\\.venv\\Scripts\\fastmcp.exe",
+      "args": ["run", "C:\\Users\\south\\meraki-magic-mcp\\meraki-mcp-dynamic.py"]
+    }
+  }
+}
