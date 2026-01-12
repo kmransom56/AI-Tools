@@ -1,0 +1,40 @@
+name: cagent smoke test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for Docker socket
+        id: check
+        run: |
+          if [ ! -S /var/run/docker.sock ]; then echo "no-sock=true" >> $GITHUB_OUTPUT; else echo "no-sock=false" >> $GITHUB_OUTPUT; fi
+
+      - name: Start docker compose with cagent
+        if: steps.check.outputs.no-sock == 'false'
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for cagent to become healthy
+        if: steps.check.outputs.no-sock == 'false'
+        run: |
+          for i in {1..18}; do
+            status=$(docker inspect --format='{{json .State.Health.Status}}' cagent 2>/dev/null || echo null)
+            echo "status: $status"
+            if [[ $status == '"healthy"' ]]; then echo "cagent healthy"; exit 0; fi
+            sleep 5
+          done
+          docker compose logs cagent || true
+          exit 1
+
+      - name: Skip test (no Docker socket)
+        if: steps.check.outputs.no-sock == 'true'
+        run: echo "Runner has no Docker socket, skipping cagent smoke test."

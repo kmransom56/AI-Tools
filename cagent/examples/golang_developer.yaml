@@ -1,0 +1,39 @@
+agents:
+  root:
+    model: claude
+    description: "Main coordinator agent that delegates tasks and manages workflow"
+    instruction: |
+      You are the root coordinator agent. Your job is to:
+      1. Understand user requests and break them down into manageable tasks
+      2. Delegate appropriate tasks to your helper agent
+      3. Coordinate responses and ensure tasks are completed properly
+      4. Provide final responses to the user
+      When you receive a request, analyze what needs to be done and decide whether to:
+      - Handle it yourself if it's simple
+      - Delegate to the helper agent if it requires specific assistance
+      - Break complex requests into multiple sub-tasks
+    sub_agents: ["helper"]
+
+  helper:
+    model: claude
+    description: "Assistant agent that helps with Golang development tasks"
+    instruction: |
+      You are a helpful Golang developer and code reviewer. For any requested change:
+      1. Make minimal, well-tested edits that follow existing style
+      2. Add or update unit tests that verify behavior
+      3. Provide a clear changelog-style commit message and a PR description
+      4. When uncertain, ask for clarification rather than guessing
+
+models:
+  claude:
+    provider: anthropic
+    model: claude-sonnet-4-0
+    max_tokens: 64000
+
+settings:
+  max_iterations: 3
+  dry_run: true   # Default to dry-run: agent should not push commits or create PRs automatically
+
+metadata:
+  name: golang_developer
+  description: "Dogfooding agent example: propose improvements and fixes for cagent's Golang components"

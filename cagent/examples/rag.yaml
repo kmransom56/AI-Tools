@@ -1,0 +1,53 @@
+# Adapted from Docker cagent RAG examples: https://github.com/docker/cagent/tree/main/examples/rag
+# RAG example combines chunked embeddings + BM25 with reranking
+
+models:
+  embedder:
+    provider: openai
+    model: text-embedding-3-small
+
+  reranker:
+    provider: openai
+    model: gpt-4o
+
+rag:
+  repo_docs:
+    docs: [./docs, ./cagent, ./README.md]
+    strategies:
+      - type: chunked-embeddings
+        model: embedder
+        threshold: 0.5
+        chunking:
+          size: 1000
+          overlap: 100
+        limit: 20
+      - type: bm25
+        k1: 1.5
+        b: 0.75
+        threshold: 0.25
+        limit: 15
+    results:
+      fusion:
+        strategy: rrf
+        k: 60
+      reranking:
+        model: reranker
+        top_k: 10
+        threshold: 0.3
+      deduplicate: true
+      limit: 5
+
+agents:
+  root:
+    model: openai/gpt-4o
+    instruction: |
+      Use the repository knowledge base (RAG) to answer questions about the codebase and propose targeted fixes or documentation updates. When proposing changes, include a concise patch description and affected files.
+    rag: [repo_docs]
+
+settings:
+  dry_run: true
+  max_iterations: 3
+
+metadata:
+  name: rag_example
+  description: "RAG-enabled agent that uses repo docs to gather context and propose changes (dry-run)"
