@@ -23,19 +23,17 @@ import logging
 import httpx
 import shlex
 
+from contextlib import asynccontextmanager
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="AI Toolkit Web Interface")
-
-
-# Startup event
-@app.on_event("startup")
-async def startup_event():
-    """Log startup information"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifecycle events for model warmup and cleanup"""
     logger.info("=" * 60)
     logger.info("AI Toolkit Web Interface Starting")
     logger.info(f"Template Directory: {template_dir}")
@@ -44,7 +42,24 @@ async def startup_event():
         f"API Clients: OpenAI={bool(openai_client)}, Anthropic={bool(anthropic_client)}, Gemini={bool(gemini_client)}"
     )
     logger.info(f"Docker Client: {docker_client is not None}")
+    
+    # GPU Warmup
+    try:
+        import torch
+        if torch.cuda.is_available():
+            # Warm up CUDA kernels
+            _ = torch.zeros(1).cuda()
+            logger.info(f"GPU Warmup complete. Device: {torch.cuda.get_device_name(0)}")
+        else:
+            logger.info("CUDA not available, skipping GPU warmup")
+    except Exception as e:
+        logger.warning(f"GPU Warmup failed or torch not installed: {e}")
+    
     logger.info("=" * 60)
+    yield
+    logger.info("AI Toolkit Web Interface Shutting Down")
+
+app = FastAPI(title="AI Toolkit Web Interface", lifespan=lifespan)
 
 
 # Configure templates - support both Docker (/app/templates) and local (./templates) paths
@@ -944,12 +959,41 @@ async def execute_code(request: CodeRequest):
         return {"success": False, "error": str(e)}
 
 
+@app.get("/api/gpu")
+async def get_gpu_info():
+    """Return detailed GPU status and memory usage"""
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            return {"available": False, "error": "CUDA not available"}
+        
+        return {
+            "available": True,
+            "device_name": torch.cuda.get_device_name(0),
+            "memory_allocated": f"{torch.cuda.memory_allocated(0) / 1024**2:.2f} MB",
+            "memory_reserved": f"{torch.cuda.memory_reserved(0) / 1024**2:.2f} MB",
+            "max_memory_allocated": f"{torch.cuda.max_memory_allocated(0) / 1024**2:.2f} MB",
+            "vram_total": f"{torch.cuda.get_device_properties(0).total_memory / 1024**2:.2f} MB",
+            "capability": torch.cuda.get_device_capability(0)
+        }
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
 @app.get("/api/health")
 async def health():
-    """Health check endpoint with detailed status"""
+    """Health check endpoint with detailed status and GPU monitoring"""
+    gpu_status = "unknown"
+    try:
+        import torch
+        gpu_status = "available" if torch.cuda.is_available() else "unavailable"
+    except Exception:
+        gpu_status = "torch_not_found"
+
     return {
         "status": "healthy",
         "timestamp": __import__("datetime").datetime.utcnow().isoformat(),
+        "gpu_status": gpu_status,
         "apis_configured": {
             "openai": bool(openai_client),
             "anthropic": bool(anthropic_client),

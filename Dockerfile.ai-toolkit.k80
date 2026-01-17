@@ -4,14 +4,16 @@ FROM nvidia/cuda:11.4.3-runtime-ubuntu20.04
 # This version matches driver 475.14 (CUDA 11.4 compatible)
 # CUDA 12.x is NOT supported by Maxwell architecture (K80)
 
-# Set working directory
 WORKDIR /app
 
-# Set non-interactive frontend for apt
-ENV DEBIAN_FRONTEND=noninteractive
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    TOKENIZERS_PARALLELISM=false \
+    PIP_NO_CACHE_DIR=1
 
-# Install system dependencies and Python 3.9 (available in Ubuntu 20.04)
-RUN apt-get update && apt-get install -y \
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.9 \
     python3.9-venv \
     python3-pip \
@@ -20,47 +22,19 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Set python3.9 as default and upgrade pip
-RUN python3.9 -m pip install --upgrade pip setuptools wheel
+# Upgrade pip
+RUN python3.9 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Install AI/ML frameworks (using latest stable versions)
-RUN python3.9 -m pip install --no-cache-dir \
-    torch \
-    transformers
+# Install Python dependencies
+COPY requirements.txt .
+RUN python3.9 -m pip install --no-cache-dir -r requirements.txt
 
-# Install OpenAI and AI CLI tools
-RUN python3.9 -m pip install --no-cache-dir \
-    openai \
-    anthropic \
-    google-generativeai \
-    shell-gpt \
-    langchain \
-    langchain-openai \
-    langchain-anthropic
+# Create necessary directories
+RUN mkdir -p /app/config /app/templates /app/workspace
 
-# Install additional useful tools
-RUN python3.9 -m pip install --no-cache-dir \
-    requests \
-    httpx \
-    python-dotenv \
-    pyyaml \
-    rich \
-    typer \
-    fastapi \
-    uvicorn \
-    jinja2 \
-    docker
-
-# Create config directory
-RUN mkdir -p /app/config /app/templates
-
-# Copy web application files
+# Copy application files
 COPY ai_web_app.py /app/
 COPY templates/index.html /app/templates/
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV TOKENIZERS_PARALLELISM=false
 
 # Expose web interface port
 EXPOSE 8000
