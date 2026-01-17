@@ -3,10 +3,12 @@ FROM nvidia/cuda:11.4.3-runtime-ubuntu20.04
 # IMPORTANT: Tesla K80 GPUs (Compute Capability 3.7) support CUDA 11.x
 # This version matches driver 475.14 (CUDA 11.4 compatible)
 # CUDA 12.x is NOT supported by Maxwell architecture (K80)
-# If you have newer GPUs with driver 525+, change to: nvidia/cuda:11.8.0-runtime-ubuntu22.04
 
 # Set working directory
 WORKDIR /app
+
+# Set non-interactive frontend for apt
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies and Python 3.9 (available in Ubuntu 20.04)
 RUN apt-get update && apt-get install -y \
@@ -27,10 +29,10 @@ RUN python3.9 -m pip install --no-cache-dir \
     transformers
 
 # Install OpenAI and AI CLI tools
-RUN python3.11 -m pip install --no-cache-dir \
+RUN python3.9 -m pip install --no-cache-dir \
     openai \
     anthropic \
-    google-genai \
+    google-generativeai \
     shell-gpt \
     langchain \
     langchain-openai \
@@ -46,10 +48,8 @@ RUN python3.9 -m pip install --no-cache-dir \
     typer \
     fastapi \
     uvicorn \
-    jinja2
-
-# Add docker SDK to allow programmatic control of docker daemon (requires socket mount)
-RUN python3.9 -m pip install --no-cache-dir docker
+    jinja2 \
+    docker
 
 # Create config directory
 RUN mkdir -p /app/config /app/templates
@@ -66,4 +66,4 @@ ENV TOKENIZERS_PARALLELISM=false
 EXPOSE 8000
 
 # Start web server
-CMD ["uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python3.9", "-m", "uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000"]

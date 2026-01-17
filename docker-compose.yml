@@ -2,7 +2,8 @@ services:
   ai-toolkit:
     build:
       context: .
-      dockerfile: Dockerfile.ai-toolkit
+      # Switch to Dockerfile.ai-toolkit.k80 for Tesla K80 GPUs
+      dockerfile: Dockerfile.ai-toolkit.rtx3060
     image: ai-toolkit:latest
     container_name: ai-toolkit
     working_dir: /app

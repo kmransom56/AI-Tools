@@ -1,0 +1,72 @@
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+
+# Optimized for RTX 3060 and newer (Compute Capability 8.6+)
+# Supports CUDA 12.x and latest AI frameworks
+
+# Set working directory
+WORKDIR /app
+
+# Set non-interactive frontend for apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install system dependencies and Python 3.11
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-venv \
+    python3-pip \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set python3.11 as default and upgrade pip
+RUN python3.11 -m pip install --upgrade pip setuptools wheel
+
+# Install AI/ML frameworks
+RUN python3.11 -m pip install --no-cache-dir \
+    torch \
+    transformers \
+    accelerate
+
+# Install OpenAI and AI CLI tools
+RUN python3.11 -m pip install --no-cache-dir \
+    openai \
+    anthropic \
+    google-generativeai \
+    shell-gpt \
+    langchain \
+    langchain-openai \
+    langchain-anthropic
+
+# Install additional useful tools
+RUN python3.11 -m pip install --no-cache-dir \
+    requests \
+    httpx \
+    python-dotenv \
+    pyyaml \
+    rich \
+    typer \
+    fastapi \
+    uvicorn \
+    jinja2 \
+    docker
+
+# Create config directory
+RUN mkdir -p /app/config /app/templates
+
+# Copy web application files
+COPY ai_web_app.py /app/
+COPY templates/index.html /app/templates/
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV TOKENIZERS_PARALLELISM=false
+
+# Expose web interface port
+EXPOSE 8000
+
+# Start web server
+CMD ["python3.11", "-m", "uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000"]
