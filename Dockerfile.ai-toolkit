@@ -1,35 +1,38 @@
-FROM python:3.11-slim
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies and Python
 RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-venv \
+    python3-pip \
     git \
     curl \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip and install foundational packages
-RUN pip install --upgrade pip setuptools wheel
+# Use python3.11 explicitly and upgrade pip
+RUN python3.11 -m pip install --upgrade pip setuptools wheel
 
 # Install AI/ML frameworks (using latest stable versions)
-RUN pip install --no-cache-dir \
+RUN python3.11 -m pip install --no-cache-dir \
     torch \
     transformers
 
 # Install OpenAI and AI CLI tools
-RUN pip install --no-cache-dir \
+RUN python3.11 -m pip install --no-cache-dir \
     openai \
     anthropic \
-    google-generativeai \
+    google-genai \
     shell-gpt \
     langchain \
     langchain-openai \
     langchain-anthropic
 
 # Install additional useful tools
-RUN pip install --no-cache-dir \
+RUN python3.11 -m pip install --no-cache-dir \
     requests \
     httpx \
     python-dotenv \
@@ -41,7 +44,7 @@ RUN pip install --no-cache-dir \
     jinja2
 
 # Add docker SDK to allow programmatic control of docker daemon (requires socket mount)
-RUN pip install --no-cache-dir docker
+RUN python3.11 -m pip install --no-cache-dir docker
 
 # Create config directory
 RUN mkdir -p /app/config /app/templates

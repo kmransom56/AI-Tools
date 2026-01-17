@@ -20,6 +20,13 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     restart: unless-stopped
     stdin_open: true
     tty: true
@@ -28,12 +35,20 @@ services:
   tabbyml:
     image: tabbyml/tabby:latest
     container_name: tabbyml
-    command: ["serve", "--model", "StarCoder-1B", "--device", "cpu", "--chat-model", "Qwen2-1.5B-Instruct"]
+    # Use GPU for inference when available
+    command: ["serve", "--model", "StarCoder-1B", "--device", "cuda"]
     # Expose TabbyML on host port 11001 (registered via Port Manager)
     ports:
       - "11001:8080"
     volumes:
       - tabby-data:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     restart: unless-stopped
 
 volumes:
