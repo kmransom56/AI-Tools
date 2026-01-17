@@ -20,13 +20,8 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      # For GPU support on WSL2, ensure NVIDIA Container Toolkit is installed:
+      # https://docs.nvidia.com/cuda/wsl-user-guide/index.html
     restart: unless-stopped
     stdin_open: true
     tty: true
@@ -35,20 +30,15 @@ services:
   tabbyml:
     image: tabbyml/tabby:latest
     container_name: tabbyml
-    # Use GPU for inference when available
-    command: ["serve", "--model", "StarCoder-1B", "--device", "cuda"]
+    # Use CPU mode by default (GPU support requires NVIDIA Container Toolkit on WSL2)
+    command: ["serve", "--model", "StarCoder-1B", "--device", "cpu"]
     # Expose TabbyML on host port 11001 (registered via Port Manager)
     ports:
       - "11001:8080"
     volumes:
       - tabby-data:/data
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    environment:
+      CUDA_VISIBLE_DEVICES: ""
     restart: unless-stopped
 
 volumes:

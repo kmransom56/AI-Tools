@@ -10,3 +10,11 @@
     }
   }
 }
+{
+  "powershell.scriptAnalysis.enable": true,
+  "powershell.scriptAnalysis.settingsPath": "",
+  "powershell.scriptAnalysis.settingsPath":"C:\\Users\south\\OneDrive\\Documents\\PSScriptAnalyzerSettings.psd1",
+  "powershell.codeFormatting.preset": "Custom",
+  "powershell.codeFormatting.useCorrectCasing": true,
+  "powershell.codeFormatting.alignPropertyValuePairs": true
+}

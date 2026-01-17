@@ -1,700 +1,762 @@
-# Github Copilot Configuration - Complete Guide
-
-**Based on your AGENTS.md - Reorganized for Github Copilot**  
-**Date**: 2026-01-16  
-**Version**: 1.0  
-
----
-
-## 📋 How to Use This File
-
-This single file contains your complete Github Copilot configuration. You can:
-
-1. **Option 1**: Use as-is - Keep this single file as `copilot-instructions.md` in your project root
-2. **Option 2**: Split into 3 files (recommended):
-   - `copilot-instructions.md` (sections 1-2)
-   - `copilot-skills.md` (section 3)
-   - `copilot-subagents.md` (section 4)
-
-Github Copilot will automatically detect and use these files.
-
----
-
-# SECTION 1: CORE RULES & STANDARDS
-
-## Code Quality & Standards
-
-### Python Standards
-- **Package Manager**: Always use `uv` for Python dependency management
-- **Code Formatting**: Use `black` with line length 88
-- **Linting**: Flake8 with max-line-length=88, ignore E203,W503,E501
-- **Target Version**: Python 3.12+
-- **No Copy-Paste**: All file modifications must be automated using tools
-
-### Mandatory Quality Checks
-Run these IN ORDER after any code change:
-```bash
-# 1. Format
-black app/ tests/ tools/ *.py
-
-# 2. Lint
-flake8 app/ tests/ tools/ --max-line-length=88 --ignore=E203,W503,E501
-
-# 3. Syntax check
-python -m py_compile app/**/*.py tests/**/*.py tools/**/*.py
-```
-
-### File Operations
-- **MANDATORY**: Always write files directly using tools - NEVER provide code for manual copy-paste
-- Use available file operation tools
-- No code blocks for user to copy-paste
-
-### Code Style
-- **Framework**: FastAPI for backend development
-- **Async/Await**: Use async/await for asynchronous operations
-- **Error Handling**: Comprehensive try-except with proper logging
-
-## Port Management Protocol
-
-**CRITICAL**: NEVER guess port numbers!
-
-```bash
-# Find available port
-port-registry find
-
-# Register port (REQUIRED)
-port-registry register $PORT "AppName" "Description"
-
-# Check existing
-port-registry list
-
-# Lookup specific port
-port-registry lookup $PORT
-```
-
-## Docker Workflow
-
-**Always follow this exact sequence**:
-
-1. Stop containers: `docker compose down`
-2. Make code changes
-3. Run quality checks (black → flake8 → compile)
-4. Rebuild: `docker compose up --build -d`
-5. Verify: `docker compose logs -f [service]`
-
-**NEVER** skip the rebuild step after code changes!
-
-## Security & Credentials
-
-### Credential Handling
-- **NEVER commit credentials** - use environment variables
-- Store in `.env` files (gitignored)
-- API keys in separate `.env` files by service
-- SSH keys in `~/.ssh/` (system-level)
-
-### SSL/TLS
-- Support corporate CA certificates (Zscaler compatibility)
-- Certificate rotation documented
-- HTTPS enforced in production
-
-## Project Context
-
-### Tech Stack
-- **Backend**: FastAPI, Python 3.12+
-- **Package Management**: uv
-- **Containerization**: Docker, Docker Compose
-- **Testing**: pytest, Playwright
-- **Code Quality**: Black, Flake8
-
-### Network Infrastructure Focus
-- Fortinet ecosystem (FortiGate, FortiManager, FortiAP, FortiSwitch)
-- Cisco Meraki Dashboard API
-- Technitium DNS
-- Multi-site enterprise deployments (3,500+ locations)
-
-## Ambition vs Precision
-
-### New Tasks (Brand New Context)
-- Be ambitious and creative
-- Demonstrate comprehensive implementation
-- Show good judgment with extras
-
-### Existing Codebase
-- **Surgical precision required**
-- Change only what's requested
-- Respect existing patterns
-- Maintain consistency
-- Avoid unnecessary refactoring
-
----
-
-# SECTION 2: TESTING & DOCUMENTATION
-
-## Testing Requirements
-
-### Before Committing
-- Run full quality check (black, flake8, compile)
-- All tests must pass
-- Coverage: Aim for 80%+
-
-### E2E Testing
-- Use Playwright for end-to-end tests
-- Tests in `tests/e2e/`
-- Name files with `.spec.js` or `.spec.ts`
-
-## Documentation Requirements
-
-### Required Documentation
-- API endpoints documented (OpenAPI/Swagger)
-- Setup and deployment guides
-- Architecture decisions (ADRs) for major changes
-- Troubleshooting guides
-- README with quick-start
-
-### Code Documentation
-- Module docstrings explaining purpose
-- Function signatures with type hints
-- Complex logic documented inline
-- Examples for public APIs
-
----
-
-# SECTION 3: AGENT SKILLS & CAPABILITIES
-
-## Built-in Agent Tools
-
-### File Operations
-- **Read Files**: Access any file in the codebase
-- **Write Files**: Create and modify files
-- **Directory Operations**: Navigate and manage directories
-
-### Terminal & Shell
-- **Command Execution**: Run shell commands
-- **Build & Test**: black, flake8, pytest, docker
-- **Environment Management**: Virtual env, uv, port-registry
-
-### Code Generation
-- **Function Implementation**: Generate from descriptions
-- **Boilerplate Creation**: Create project templates
-- **Test Generation**: Write unit and integration tests
-- **Documentation**: Create docstrings and guides
-
-## Specialized Network Skills
-
-### Fortinet Device Management
-- **FortiGate Configuration**: Parse and generate FortiOS configs
-- **FortiManager Integration**: API calls for centralized management
-- **Static BGP Configuration**: Manage routing policies
-- **FortiAP & FortiSwitch**: Wireless and switching configs
-
-### Cisco Meraki Integration
-- **Dashboard API**: Query networks, devices, events
-- **Organization Management**: Manage Meraki orgs and admins
-- **Device Configuration**: Update device settings and policies
-- **Network Monitoring**: Real-time metrics and alerts
-
-### DNS & Security
-- **Technitium DNS**: Configuration and query management
-- **DNSCrypt Implementation**: Secure DNS setup
-- **RADIUS Integration**: Authentication server configs
-- **Certificate Management**: PKI and SSL/TLS operations
-
-### Network Topology & Visualization
-- **3D Force-Graph**: Generate network topology visualizations
-- **Device Discovery**: Scan and identify network devices
-- **Topology Mapping**: Create visual representations
-- **Dependency Analysis**: Map service and device relationships
-
-### Multi-Site Management
-- **Site Inventory**: Manage 3,500+ location configurations
-- **Batch Operations**: Bulk changes across sites
-- **Configuration Sync**: Synchronize configs across locations
-- **Compliance Checking**: Verify standard configurations
-
-## Development Skills
-
-### Python FastAPI
-- **API Endpoint Creation**: Generate REST endpoints
-- **Request/Response Handling**: Parse and format API payloads
-- **Async Operations**: Create async functions and handlers
-- **Error Handling**: Implement proper exception handling
-
-### Docker & Containerization
-- **Dockerfile Generation**: Create optimized Docker images
-- **Docker Compose Setup**: Multi-service configuration
-- **Volume Management**: Persistent data configuration
-- **Network Configuration**: Container networking
-
-### Testing & Quality
-- **Unit Test Generation**: Create pytest test files
-- **Integration Testing**: Setup test fixtures and mocks
-- **E2E Testing**: Generate Playwright test scenarios
-- **Coverage Analysis**: Calculate and improve code coverage
-
-### Database Operations
-- **SQL Queries**: Write and optimize SQL
-- **Schema Migrations**: Create database migrations
-- **ORM Models**: Define SQLAlchemy models
-- **Data Import/Export**: Handle data transformation
-
-## Analytics & Debugging
-
-### Code Analysis
-- **Bug Detection**: Identify logical errors and edge cases
-- **Performance Analysis**: Find bottlenecks
-- **Security Scanning**: Identify vulnerabilities
-- **Code Duplication**: Find and eliminate duplicate code
-
-### System Diagnostics
-- **Health Checks**: Run system verification scripts
-- **Dependency Analysis**: Check package compatibility
-- **Configuration Validation**: Verify config correctness
-- **Log Analysis**: Parse and analyze application logs
-
-## Integration Skills
-
-### Git & Version Control
-- **Commit Operations**: Create meaningful commits
-- **Branch Management**: Create and manage branches
-- **Merge Conflict Resolution**: Resolve conflicts intelligently
-- **History Analysis**: Use git log and blame for context
-
-### API Integration
-- **REST API Calls**: Make authenticated HTTP requests
-- **Webhook Handling**: Parse incoming webhooks
-- **Rate Limiting**: Implement rate limit awareness
-- **Error Retry Logic**: Implement exponential backoff
-
----
-
-# SECTION 4: SPECIALIZED AGENTS
-
-## Agent Hierarchy
-
-```
-Root Agent (Coordinator)
-├── Python Developer Agent
-├── DevOps & Deployment Agent
-├── Network Infrastructure Agent
-├── Database & Data Agent
-├── Testing & QA Agent
-└── Documentation Agent
-```
-
-## 1. Python Developer Agent
-
-**Purpose**: Handle Python code development, FastAPI endpoints, and application logic.
-
-### Activation Triggers
-- Python file modifications requested
-- New FastAPI endpoint creation
-- Python package management
-- Code quality improvements
-- Bug fixes in Python code
-
-### Responsibilities
-- Write clean, well-tested Python code
-- Implement FastAPI endpoints with proper validation
-- Handle async/await patterns correctly
-- Follow uv package management conventions
-- Maintain black/flake8 compliance
-- Write comprehensive docstrings and type hints
-
-### Key Skills
-- FastAPI development
-- Python code quality (black, flake8)
-- Async/await patterns
-- pytest unit testing
-- Package management with uv
-
----
-
-## 2. DevOps & Deployment Agent
-
-**Purpose**: Manage infrastructure, Docker, containerization, and deployment workflows.
-
-### Activation Triggers
-- Docker/container changes requested
-- Deployment configuration needed
-- Environment setup required
-- Port allocation needed
-- Container orchestration tasks
-
-### Responsibilities
-- Create and optimize Dockerfiles
-- Manage docker-compose configurations
-- Port allocation via port-registry
-- Environment variable management
-- Health check implementation
-- Monitoring and alerting configuration
-
-### Key Skills
-- Docker and docker-compose
-- Port registry management
-- Environment configuration
-- Deployment automation
-- Health checks and monitoring
-
----
-
-## 3. Network Infrastructure Agent
-
-**Purpose**: Handle Fortinet, Meraki, DNS, and network topology management.
-
-### Activation Triggers
-- FortiGate/FortiManager configuration
-- Meraki Dashboard API calls
-- DNS (Technitium) management
-- Network topology visualization
-- Device discovery and inventory
-- Multi-site network management
-
-### Responsibilities
-- Parse and generate FortiOS configurations
-- Execute Meraki Dashboard API operations
-- Manage Technitium DNS records
-- Create network topology visualizations
-- Discover and catalog network devices
-- Manage multi-site deployments (3,500+ locations)
-
-### Key Skills
-- Fortinet ecosystem (FortiGate, FortiManager, FortiAP, FortiSwitch)
-- Cisco Meraki Dashboard API
-- Technitium DNS management
-- Network topology visualization (3D force-graph)
-- Device discovery and inventory
-- BGP and routing configuration
-- RADIUS and certificate management
-
----
-
-## 4. Database & Data Agent
-
-**Purpose**: Manage databases, migrations, data processing, and analytics.
-
-### Activation Triggers
-- Database schema changes
-- Migration creation needed
-- Data import/export operations
-- Query optimization required
-- Data validation/cleaning
-
-### Responsibilities
-- Create database migrations
-- Write and optimize SQL queries
-- Implement data transformations
-- Handle data import/export
-- Perform data validation
-- Manage database backups
-- Create analytics reports
-
-### Key Skills
-- SQL query writing and optimization
-- Database migrations (Alembic)
-- Data processing (Pandas)
-- Backup and restore procedures
-- Analytics and reporting
-
----
-
-## 5. Testing & QA Agent
-
-**Purpose**: Create tests, validate quality, and ensure reliability.
-
-### Activation Triggers
-- New test creation requested
-- Code quality checks needed
-- E2E testing required
-- Regression testing
-- Coverage analysis
-
-### Responsibilities
-- Write unit tests (pytest)
-- Create integration tests
-- Generate E2E tests (Playwright)
-- Calculate code coverage
-- Perform regression testing
-- Create test fixtures and mocks
-
-### Key Skills
-- pytest framework
-- Playwright E2E testing
-- Coverage analysis
-- Test fixtures and mocking
-- Performance testing
-- Regression testing
-
----
-
-## 6. Documentation Agent
-
-**Purpose**: Create and maintain all documentation.
-
-### Activation Triggers
-- Documentation updates needed
-- API documentation generation
-- User guide creation
-- Architecture decision documentation
-- Troubleshooting guide updates
-
-### Responsibilities
-- Generate API documentation (OpenAPI/Swagger)
-- Write user guides and tutorials
-- Create architecture documentation
-- Document architectural decisions (ADRs)
-- Update README and setup guides
-- Write troubleshooting guides
-
-### Key Skills
-- Markdown documentation
-- OpenAPI/Swagger generation
-- Architecture diagramming
-- User guide writing
-- ADR (Architecture Decision Record) creation
-
----
-
-## Agent Capabilities Matrix
-
-| Task Type | Python Dev | DevOps | Network | Database | Testing | Docs |
-|-----------|-----------|--------|---------|----------|---------|------|
-| FastAPI Development | ⭐⭐⭐ | - | - | ⭐ | ⭐⭐⭐ | ⭐⭐ |
-| Docker Setup | ⭐ | ⭐⭐⭐ | ⭐⭐ | ⭐⭐ | ⭐ | ⭐ |
-| Network Config | - | ⭐⭐ | ⭐⭐⭐ | - | ⭐ | ⭐⭐ |
-| Database Schema | ⭐⭐ | ⭐ | - | ⭐⭐⭐ | ⭐⭐ | ⭐⭐ |
-| Testing | ⭐⭐ | ⭐ | ⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐ |
-| Documentation | ⭐⭐ | ⭐⭐ | ⭐⭐ | ⭐⭐ | ⭐ | ⭐⭐⭐ |
-| Bug Fixing | ⭐⭐⭐ | ⭐⭐ | ⭐⭐ | ⭐⭐ | ⭐⭐⭐ | ⭐⭐ |
-
-**Legend**: ⭐⭐⭐ = Primary, ⭐⭐ = Secondary, ⭐ = Support, - = Not involved
-
----
-
-## Escalation Paths
-
-### When Agents Escalate to User
-- **Security Issues**: Potential vulnerabilities detected
-- **Architecture Decisions**: Major structural changes needed
-- **Production Changes**: Deployment to production requested
-- **Policy Violations**: Conflicts with project standards
-- **Ambiguity**: Task requirements unclear
-- **Blocked**: Dependencies or permissions needed
-
----
-
-# QUICK REFERENCE
-
-## Common Tasks
-
-| Task | Check | Ask Agent |
-|------|-------|-----------|
-| Create FastAPI endpoint | Rules section | Python Developer |
-| Set up Docker | Rules section | DevOps |
-| Configure FortiGate | Skills section | Network Infrastructure |
-| Create migration | Skills section | Database |
-| Write tests | Skills section | Testing & QA |
-| Document API | Skills section | Documentation |
-
-## Quality Check Commands
-
-```bash
-# Always in this order!
-black app/ tests/ tools/ *.py
-flake8 app/ tests/ tools/ --max-line-length=88 --ignore=E203,W503,E501
-python -m py_compile app/**/*.py tests/**/*.py tools/**/*.py
-```
-
-## Port Management
-
-```bash
-port-registry find                           # Find available
-port-registry register $PORT "Name" "Desc"   # Register (required!)
-port-registry list                           # View all
-```
-
-## Docker Workflow
-
-```bash
-docker compose down                    # Stop
-# Make changes + run quality checks
-docker compose up --build -d          # Rebuild
-docker compose logs -f [service]      # Verify
-```
-
----
-
-# GOLDEN RULES
-
-❌ **NEVER**:
-- Copy-paste code (use tools only)
-- Hardcode port numbers (use port-registry)
-- Commit credentials (use .env)
-- Skip quality checks
-- Deploy to production without approval
-
-✅ **ALWAYS**:
-- Use `uv` for Python packages
-- Run: black → flake8 → pytest
-- Docker: down → change → checks → up --build
-- Register ports with port-registry
-- Use environment variables for secrets
-
----
-
-**Configuration Ready!**  
-**Status**: Production Ready  
-**Date**: 2026-01-16  
-**Version**: 1.0
-
-Save this as `copilot-instructions.md` in your project root and Cursor IDE will automatically use it!
 # AI Development Toolkit - Copilot Instructions
 
-**Windows-first AI toolkit**: Multi-provider LLM web app, port management system, and automated installer for AI development tools.
+**Windows-first AI toolkit**: Multi-provider LLM web app with centralized port management, local inference support, and AI agent orchestration.
 
-## Architecture (The "Why")
+**Last Updated**: 2026-01-17  
+**Version**: 1.2  
+
+---
+
+## 🎯 Project Overview
+
+This is a **Windows-focused AI development toolkit** that provides:
+1. **FastAPI web interface** ([ai_web_app.py](../ai_web_app.py)) for OpenAI/Anthropic/Gemini APIs + local inference (PowerInfer/TurboSparse)
+2. **Port Manager** ([scripts/Port-Manager.ps1](../scripts/Port-Manager.ps1)) - Windows registry-based port allocation system
+3. **cagent orchestration** - Run AI agent examples with safety constraints (dry-run enforced, max_iterations ≤ 10)
+4. **Streaming responses** - Real-time chat completion streaming for responsive UX
+5. **Automated installer** ([AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1)) for AI tools (Void, Cursor, TabbyML, Continue.dev)
+6. **Docker containerization** for reproducible deployments
+
+---
+
+## 🏗️ Architecture (The "Why")
 
 ### Three-Tier Design
-- **Tier 1**: AI tools (Void/Cursor/Continue.dev) on desktop
-- **Tier 2**: Port Manager (Windows registry) prevents port conflicts
-- **Tier 3**: FastAPI app (port 8000) → OpenAI/Anthropic/Gemini APIs
+- **Tier 1**: AI tools (Void/Cursor/Continue.dev) on Windows desktop
+- **Tier 2**: Port Manager (Windows registry at `%USERPROFILE%\AI-Tools\port-registry.json`) prevents conflicts
+- **Tier 3**: FastAPI app (default port 8000) → routes to OpenAI/Anthropic/Gemini APIs
 
-Why? Decouples tool configuration from API complexity; single registry source of truth prevents chaos when running 5+ tools simultaneously.
+**Why this design?** Running 5+ AI tools simultaneously creates port chaos. Port Manager provides single source of truth; FastAPI layer decouples tool configuration from API complexity.
 
-## Critical Project Decisions
+### Critical Architectural Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| **Windows-only** | Relies on PowerShell 5.1+, netstat, WSL2-based Docker |
-| **Port 11000-12000 range** | Avoids conflicts with web frameworks (3000-8000) |
-| **Single FastAPI file** | [ai_web_app.py](ai_web_app.py) ~350 lines keeps it simple to modify |
-| **Docker-required** | Simplifies AI SDK dependencies; enables reproducibility |
-| **Multi-provider pattern** | Three separate client objects (OpenAI/Anthropic/Gemini), not abstracted |
+| Decision | Rationale | File Reference |
+|----------|-----------|----------------|
+| **Windows-only** | Relies on PowerShell 5.1+, `Get-NetTCPConnection`, WSL2 Docker | [AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1#L28-L41) |
+| **Port range 11000-12000** | Avoids web framework conflicts (3000-8000) | [port-registry.json](../port-registry.json) |
+| **Single FastAPI file** | ~975 lines keeps it hackable | [ai_web_app.py](../ai_web_app.py) |
+| **No API abstraction** | Each provider (OpenAI/Anthropic/Gemini/PowerInfer/TurboSparse) gets own client/handler | [ai_web_app.py](../ai_web_app.py#L86-L108) |
+| **Docker-required** | Simplifies Python SDK dependencies (openai/anthropic/google-genai) | [docker-compose.yml](../docker-compose.yml) |
+| **cagent dry-run enforced** | Security: All cagent runs execute with `CAGENT_DRY_RUN=1` and `max_iterations ≤ 10` | [ai_web_app.py](../ai_web_app.py#L452-L530) |
+| **Streaming-first responses** | `/api/chat/stream` preferred for responsive UX; `/api/chat` for non-stream | [ai_web_app.py](../ai_web_app.py#L700-L800) |
 
-## Code Patterns (Use These Exact Patterns)
+---
 
-### 1. API Provider Integration
-Each provider **gets its own client** - don't abstract them:
+## 🔧 Code Patterns (Use These EXACTLY)
+
+### 1. API Provider Integration Pattern
+**DO NOT abstract providers** - each gets its own client:
+
 ```python
+# From ai_web_app.py lines 86-108
 openai_client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 anthropic_client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-# Then call them directly: openai_client.chat.completions.create(...)
+
+# Then call directly - routing happens in FastAPI layer only
+response = openai_client.chat.completions.create(...)
 ```
 
-### 2. Environment Variable Loading (Three-Step Cascade)
-See [AI-Toolkit-Auto.ps1](AI-Toolkit-Auto.ps1#L45-L70):
-1. Check `$env:*_API_KEY` (Windows environment)
-2. Parse `.env` file if exists
-3. Prompt user if missing
+### 2. Environment Variable Cascade (Three-Step Pattern)
+See [AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1#L52-L78):
 
-Never hard-code or commit keys. Use `.env.example` as template.
+```powershell
+# 1. Check Windows environment variables first
+$OPENAI = $env:OPENAI_API_KEY
+
+# 2. Fall back to .env file if not set
+if (-not $OPENAI) {
+    $envFile = Join-Path $PSScriptRoot ".env"
+    if (Test-Path $envFile) {
+        Get-Content $envFile | ForEach-Object {
+            if ($_ -match '^\s*OPENAI_API_KEY=(.*)$') {
+                $OPENAI = $matches[1].Trim()
+                $env:OPENAI_API_KEY = $OPENAI
+            }
+        }
+    }
+}
+
+# 3. Prompt user if still missing (validation before Docker starts)
+if (-not $OPENAI) {
+    Write-Error "Missing OPENAI_API_KEY - set in .env or system environment"
+    exit 1
+}
+```
+
+**Never hardcode or commit keys.** Use [env.template](../env.template) as reference.
 
 ### 3. PowerShell Script Structure
-Always follow this pattern (see [AI-Toolkit-Auto.ps1](AI-Toolkit-Auto.ps1#L1-L20)):
+All scripts follow this pattern ([AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1#L1-L25)):
+
 ```powershell
-# 1. Load Port Manager (dot-source, not import)
-. $PSScriptRoot/scripts/Port-Manager.ps1
+# 1. Load Port Manager (dot-source, NOT Import-Module)
+. $PSScriptRoot\scripts\Port-Manager.ps1
 
 # 2. Setup logging early
-Function Write-ToolLog { ... }
+Function Write-ToolLog {
+    param([string]$message)
+    "$((Get-Date).ToString('yyyy-MM-dd HH:mm:ss')) - $message" | Out-File -Append -FilePath $logPath
+}
 
-# 3. Admin check before Chocolatey
-if (-not ([Security.Principal.WindowsPrincipal]...)) { exit 1 }
+# 3. Admin check before Chocolatey/Docker operations
+if (-not ([Security.Principal.WindowsPrincipal]...).IsInRole(...)) {
+    Write-Error "Administrator privileges required"
+    exit 1
+}
 
-# 4. API key validation before any network calls
+# 4. Validate API keys before any network calls
 ```
 
-### 4. Docker Deployment
-[docker-compose.yml](docker-compose.yml#L13-L16) pattern:
-- Mount API keys from environment (`${OPENAI_API_KEY}`)
-- Mount socket for nested containers (`/var/run/docker.sock`)
-- Use `unless-stopped` restart (survives reboots)
+### 4. Port Manager Usage Pattern
+**CRITICAL**: Never hardcode port numbers!
 
-### 5. FastAPI Endpoints
-[ai_web_app.py](ai_web_app.py) includes:
-- `GET /` → serve [templates/index.html](templates/index.html)
-- `POST /api/chat` → route to correct provider based on `model` param
-- `POST /api/execute-code` → run Python in Docker with timeout
-
-## Development Workflows
-
-### Starting Dev Server (Choose One)
-
-**Docker (recommended for testing)**:
 ```powershell
-docker-compose up --build
-# Rebuilds image, exposes at http://localhost:8000
+# PowerShell - Find and register
+$port = Get-AvailablePort -ApplicationName "my-tool" -PreferredPort 11000
+Register-Port -ApplicationName "my-tool" -Port $port -Description "My service"
+
+# Python - Query existing
+from integrations.python_port_helper import get_port
+port = get_port('my-tool', 11000)
 ```
 
-**Direct Python** (fast iteration):
+See [scripts/Port-Manager.ps1](../scripts/Port-Manager.ps1) for implementation.
+
+### 5. Docker Deployment Pattern
+From [docker-compose.yml](../docker-compose.yml#L6-L24):
+
+```yaml
+services:
+  ai-toolkit:
+    build:
+      context: .
+      dockerfile: Dockerfile.ai-toolkit
+    ports:
+      - "11000:8000"  # Host:Container (use Port Manager for host side)
+    volumes:
+      - ./:/workspace:rw  # Mount repo for cagent access
+      - /var/run/docker.sock:/var/run/docker.sock  # Nested container support
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}  # From .env or shell
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+```
+
+### 6. Local Inference Pattern (PowerInfer & TurboSparse)
+**New**: HTTP and CLI fallback support for local LLMs. See [docs/LOCAL-INFERENCE.md](../docs/LOCAL-INFERENCE.md) for details.
+
+**HTTP takes priority over CLI**:
+```
+Decision tree for PowerInfer:
+├─ POWERINFER_HOST + POWERINFER_MODEL both set?
+│  └─ YES → Use HTTP client (OpenAI-compatible, 30s timeout)
+├─ POWERINFER_CLI + POWERINFER_MODEL both set?
+│  └─ YES → Use subprocess runner (60s timeout)
+└─ Neither configured? → HTTP 503 Service Unavailable
+
+Same logic applies to TURBOSPARSE_*
+```
+
+```python
+# From ai_web_app.py lines 69-78 (config), 820-835 (routing)
+powerinfer_host = os.getenv("POWERINFER_HOST")     # e.g., http://localhost:11434
+powerinfer_model = os.getenv("POWERINFER_MODEL")   # e.g., "meta-llama-3-8b-q4"
+powerinfer_cli = os.getenv("POWERINFER_CLI")       # e.g., "powerinfer --model ... --prompt '{prompt}'"
+
+# Routing in /api/chat:
+elif request.model == "powerinfer":
+    if powerinfer_host and powerinfer_model:
+        # HTTP takes priority: OpenAI-compatible chat/completions endpoint
+        content = await call_local_chat(powerinfer_host, powerinfer_model, request.message)
+    elif powerinfer_cli and powerinfer_model:
+        # CLI fallback: subprocess with {prompt} placeholder substitution
+        content = run_cli_chat(powerinfer_cli, request.message)
+    else:
+        raise HTTPException(status_code=503, detail="PowerInfer not configured")
+```
+
+Set in `.env` (choose one):
+```bash
+# Option A: HTTP backend (preferred - requires running local server)
+POWERINFER_HOST=http://localhost:11434
+POWERINFER_MODEL=meta-llama-3-8b-q4
+
+# Option B: CLI fallback (requires local binary installed)
+POWERINFER_CLI=powerinfer --model "C:\\models\\llama3.gguf" --prompt "{prompt}" --n-predict 256
+POWERINFER_MODEL=meta-llama-3-8b-q4
+
+# Same options for TurboSparse
+TURBOSPARSE_HOST=http://localhost:11435
+TURBOSPARSE_MODEL=meta-llama-3-8b-q4
+```
+
+**Key behaviors**:
+- `{prompt}` placeholder in CLI templates is mandatory
+- HTTP timeout: 30s; CLI timeout: 60s
+- Auto-normalizes HTTP host to `/v1/chat/completions` endpoint
+
+### 7. cagent Orchestration Pattern
+**New**: Discover and run cagent examples from the web UI with built-in safety enforcement.
+
+```python
+# From ai_web_app.py lines 445-570
+@app.get("/api/cagent/examples")
+async def cagent_examples():
+    """Returns list of YAML files under */cagent/examples/* with metadata."""
+    examples = find_cagent_examples()
+    # Scans: /workspace, /app/workspace, /app, ./ for */cagent/examples/*.yml
+    # Parses: tag, dry_run, max_iterations from YAML frontmatter
+    return {"examples": examples, "count": len(examples)}
+
+@app.post("/api/cagent/run")
+async def cagent_run(req: CagentRunRequest):
+    """Run YAML example with ENFORCED safety constraints.
+    
+    Key constraint: CAGENT_DRY_RUN=1 is ALWAYS set (cannot be disabled)
+    Key constraint: max_iterations validated to be <= 10 before execution
+    """
+    # Validation layer: rejects max_iterations > 10
+    if merged.get("max_iterations", 0) > 10:
+        raise HTTPException(status_code=400, detail="max_iterations too large (max 10)")
+    
+    # Enforcement: Always set dry-run, UI cannot override
+    env = {"CAGENT_DRY_RUN": "1"}
+    
+    # Container mount: repo root at /workspace, docker.sock for nested containers
+    docker_client.containers.run(
+        image="docker/cagent:latest",
+        command=["run", example_relpath],
+        environment=env,
+        volumes={host_workspace: {"bind": "/workspace", "mode": "rw"},
+                 "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"}}
+    )
+```
+
+**Expected YAML structure** (`*/cagent/examples/my-task.yml`):
+```yaml
+tag: "example-agent-task"
+dry_run: true
+max_iterations: 5  # Must be <= 10
+steps:
+  - action: "execute"
+    command: "echo 'Task running'"
+```
+
+**Troubleshooting**:
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| "max_iterations too large" | YAML has `max_iterations > 10` | Reduce to ≤ 10 in YAML |
+| Example not discoverable | File path doesn't match `*/cagent/examples/*` pattern | Ensure: `/cagent/examples/filename.yml` |
+| Container fails to start | docker/cagent image not available | `docker pull docker/cagent:latest` |
+| "/workspace not found" errors | Container-side mount failure | Check host path exists; verify `docker.sock` mounted |
+| Unexpected file operations running | Dry-run not enforced | Verify logs show `CAGENT_DRY_RUN=1` (always set) |
+
+### 8. Streaming Response Pattern
+**New**: `/api/chat/stream` for real-time responses. Prefer this in UI.
+
+```python
+# From ai_web_app.py lines 649-760
+@app.post("/api/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """Stream responses from OpenAI/Anthropic/Gemini in real-time.
+    
+    Architecture:
+    - Each provider has its own generator (openai_stream_gen, anthropic_stream_gen)
+    - Falls back to chunking non-streaming response for local models
+    - Catches exceptions and yields [stream error: ...] to client
+    """
+    try:
+        if request.model.startswith("gpt"):
+            return StreamingResponse(openai_stream_gen(), media_type="text/plain")
+        # ... route to other providers similarly
+    except Exception as e:
+        logger.error(f"Stream chat error: {e}", exc_info=True)
+        return JSONResponse(status_code=500, content={"error": str(e)})
+```
+
+**Frontend: Complete example for streaming responses**:
+```javascript
+// Modern async/await pattern with error handling
+async function streamChatMessage(message, model) {
+  const response = await fetch('/api/chat/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, model })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Stream failed: ${error.error}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullResponse = '';
+  
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      fullResponse += chunk;
+      
+      // Update UI incrementally: append to display element
+      document.getElementById('response').textContent += chunk;
+      
+      // Optional: auto-scroll to bottom
+      document.getElementById('response').scrollTop = 
+        document.getElementById('response').scrollHeight;
+    }
+  } catch (error) {
+    console.error('Stream interrupted:', error);
+    document.getElementById('response').textContent += 
+      `\n\n[Stream error: ${error.message}]`;
+  } finally {
+    reader.releaseLock();
+  }
+  
+  return fullResponse;
+}
+
+// Usage
+document.getElementById('send-btn').addEventListener('click', async () => {
+  const message = document.getElementById('message-input').value;
+  const model = document.getElementById('model-select').value;
+  
+  document.getElementById('response').textContent = '';  // Clear previous
+  try {
+    await streamChatMessage(message, model);
+  } catch (err) {
+    console.error(err);
+  }
+});
+```
+
+**Key behaviors**:
+- Streams real-time text chunks as provider generates them
+- Falls back to 64-byte chunking for non-streaming models (local inference)
+- Catches stream exceptions and yields `[stream error: ...]` so client sees error
+- Preferred over `/api/chat` for responsive UX (large responses feel instant)
+- Response type: `text/plain` (plain text chunks, not JSON)
+
+### 9. Error Handling Pattern
+**Consistent across all endpoints**: HTTP errors with `HTTPException`, business errors with response dicts.
+
+```python
+# From ai_web_app.py - Three error patterns
+
+# Pattern 1: Configuration/HTTP-layer errors → HTTPException
+if not openai_client:
+    raise HTTPException(status_code=503, detail="OpenAI not configured")
+
+# Pattern 2: Business logic errors → success/error dict
+@app.post("/api/chat")
+async def chat(request: ChatRequest):
+    try:
+        # ... call provider API
+        return {"success": True, "response": text, "model": request.model}
+    except Exception as e:
+        logger.error(f"Chat error: {e}", exc_info=True)  # Always log
+        return {"success": False, "error": str(e)}
+
+# Pattern 3: Streaming errors → yield to client in stream
+def openai_stream_gen():
+    try:
+        stream = openai_client.chat.completions.create(..., stream=True)
+        for chunk in stream:
+            yield chunk.choices[0].delta.content
+    except Exception as e:
+        yield f"\\n[stream error: {e}]\\n"  # Client sees error in stream
+```
+
+**Status codes** (HTTP errors only):
+- `400`: Bad request (missing `{prompt}` in CLI, path traversal, invalid YAML)
+- `404`: Not found (example file, template not found)
+- `503`: Service unavailable (API key missing, backend not configured)
+- `504`: Gateway timeout (local inference subprocess timeout)
+- `500`: Server error (unexpected exception, container failure)
+
+### 10. Validation Pattern (Pydantic models)
+**All API inputs use Pydantic `BaseModel` for automatic validation**:
+
+```python
+# From ai_web_app.py lines 119-132
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    message: str
+    model: str = "gpt-4"  # Default value
+
+class CodeRequest(BaseModel):
+    code: str
+    language: str = "python"
+
+class CagentRunRequest(BaseModel):
+    example_path: str
+    overrides: dict = {}  # Optional
+```
+
+**Validation happens automatically**:
+- Missing required fields → `422 Unprocessable Entity`
+- Type mismatch (e.g., `model: 123` instead of string) → `422 Unprocessable Entity`
+- Extra fields → ignored by default
+- FastAPI returns detailed error messages listing which fields failed
+
+### 11. Async/Await Patterns
+**All I/O operations are async**: HTTP calls, file reads, Docker operations.
+
+```python
+# Pattern 1: Async HTTP client (respects timeouts)
+async with httpx.AsyncClient(timeout=30.0) as client:
+    resp = await client.post(url, json=payload)
+    # Safe: timeout kills stuck requests after 30s
+
+# Pattern 2: Async FastAPI endpoints
+@app.post("/api/chat/stream")
+async def chat_stream(request: ChatRequest):  # Always async
+    # Streaming response (generator)
+    return StreamingResponse(generator_func())
+
+@app.post("/api/chat")
+async def chat(request: ChatRequest):  # Even if not awaiting, use async
+    # Returns immediately (sync-friendly providers)
+    response = openai_client.chat.completions.create(...)
+    return {"success": True, "response": ...}
+
+# Pattern 3: Mixing sync and async
+def openai_stream_gen():  # Sync generator (can't be async)
+    stream = openai_client.chat.completions.create(..., stream=True)
+    for chunk in stream:
+        yield chunk.choices[0].delta.content  # Yields synchronously
+
+@app.post("/api/chat/stream")
+async def chat_stream(request: ChatRequest):  # Async wrapper
+    return StreamingResponse(openai_stream_gen())  # Pass sync generator
+```
+
+---
+
+## 🔄 Development Workflows
+
+### Starting the Dev Server
+
+**Docker (recommended)**:
 ```powershell
+docker compose down           # Stop existing
+docker compose up --build -d  # Rebuild and start detached
+docker compose logs -f        # Follow logs
+```
+
+**Direct Python** (fast iteration on ai_web_app.py):
+```powershell
+pip install openai anthropic google-generativeai fastapi uvicorn
 python -m uvicorn ai_web_app:app --reload --port 8000
-# Requires: openai, anthropic, google-generativeai installed
 ```
 
-### Testing Pattern (From CI)
-Check `.github/workflows/`:
-- **docker-compose-validate.yml**: Validates compose syntax
-- **psscriptanalyzer.yml**: Lints all `.ps1` files
-- Tests run on PR to `main` (see workflow files)
+### Testing Workflow
+
+**CI runs these automatically** (see [workflows/](workflows/)):
+- [psscriptanalyzer.yml](workflows/psscriptanalyzer.yml) - Lint PowerShell scripts
+- [docker-compose-validate.yml](workflows/docker-compose-validate.yml) - Validate compose syntax
+- [portmanager-tests.yml](workflows/portmanager-tests.yml) - Test port registry operations
 
 **Manual smoke test**:
 ```powershell
-$body = @{message = "Hello"; model = "gpt-4"} | ConvertTo-Json
-Invoke-WebRequest -Uri http://localhost:8000/api/chat -Method POST `
-  -Headers @{"Content-Type"="application/json"} -Body $body
+# Test API endpoint
+$body = @{message = "Test"; model = "gpt-4"} | ConvertTo-Json
+Invoke-WebRequest -Uri http://localhost:11000/api/chat `
+  -Method POST -Headers @{"Content-Type"="application/json"} -Body $body
 ```
 
 ### Common Dev Tasks
 
 | Task | Command |
 |------|---------|
-| Install Python deps | `pip install openai anthropic google-generativeai fastapi uvicorn` |
 | Validate Docker | `docker compose config` |
-| Check PowerShell | `Invoke-ScriptAnalyzer -Path scripts/ -Recurse` |
-| Read env vars | `cat .env` (never commit!) |
+| Lint PowerShell | `Invoke-ScriptAnalyzer -Path scripts/ -Recurse` |
+| View port registry | `Get-Content $env:USERPROFILE\AI-Tools\port-registry.json` |
+| Check running containers | `docker ps` |
+| View FastAPI logs | `docker compose logs -f ai-toolkit` |
+| Test streaming endpoint | See below |
+| Discover cagent examples | `docker exec ai-toolkit find /workspace -path "*/cagent/examples/*.yml"` |
 
-## What's Different Here
-
-### No Abstraction
-Most projects abstract away API differences. **We don't**. Call each client directly. This is intentional—the web UI's job is simple routing, not translation.
-
-### Port Registry as Source of Truth
-Instead of hardcoding ports, query `%USERPROFILE%\AI-Tools\port-registry.json`. Multiple tools can run simultaneously without editing config.
-
-### PowerShell First, But Polyglot
-Installation/orchestration = PowerShell (Windows admin context). App = Python (cross-platform SDK support). Helpers available in Node.js too ([integrations/node-port-helper.js](integrations/node-port-helper.js)).
-
-## Integration Points
-
-**Port Lookup** (any language):
+**Test streaming endpoint**:
 ```powershell
-# PowerShell
-$port = Get-AvailablePort -ApplicationName "my-tool" -PreferredPort 11000
-
-# Python
-from integrations.python_port_helper import get_port
-port = get_port('my-tool', 11000)
+# PowerShell - stream chunked response
+$uri = "http://localhost:11000/api/chat/stream"
+$body = @{message="Hello"; model="gpt-4"} | ConvertTo-Json
+$response = Invoke-WebRequest -Uri $uri -Method POST -Headers @{"Content-Type"="application/json"} -Body $body
+Write-Output $response.Content  # Prints streamed text
 ```
 
-**Docker to Host**: Mount source repo as volume → cagent examples accessible inside container.
+---
 
-**API Flow**: Browser → [ai_web_app.py](ai_web_app.py) → OpenAI/Anthropic/Gemini SDK → External API. SDKs handle retries/streaming.
+## ⚠️ Critical Constraints (Don't Work Around These)
 
-## Critical Constraints (Don't Work Around These)
+1. **Admin privileges required** for [AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1) (installs Chocolatey, Docker)
+2. **All three API keys** (OpenAI, Anthropic, Gemini) must exist before startup
+3. **Docker Desktop must be running** on Windows (app polls with 60s timeout)
+4. **Port Manager is source of truth** - query `port-registry.json`, don't hardcode ports
+5. **Windows PowerShell 5.1+ or Core 7+** required (uses `Get-NetTCPConnection`)
+6. **cagent dry-run enforced** - cannot be disabled; `max_iterations` capped at 10 for safety
+7. **Local inference (PowerInfer/TurboSparse) optional** - HTTP takes priority over CLI if both configured
 
-1. **Admin privilege required** for [AI-Toolkit-Auto.ps1](AI-Toolkit-Auto.ps1) (Chocolatey installs need it)
-2. **All three API keys must be present** before startup (see [AI-Toolkit-Auto.ps1](AI-Toolkit-Auto.ps1#L58-L68))
-3. **Docker Desktop must be running** (app polls for it with 60-second timeout)
-4. **Port 8000 or custom port from Port Manager only** (hardcoding ports breaks multi-tool setups)
-5. **Windows PowerShell 5.1+ or Core 7+** (Port Manager uses `Get-NetTCPConnection`)
+---
 
-## Common Pitfalls
+## 🚨 Common Pitfalls
 
-| ❌ Mistake | ✅ Fix |
-|-----------|--------|
-| Hardcode port `8000` | Query Port Manager: `Get-AvailablePort -ApplicationName "ai-toolkit"` |
-| Abstract API calls | Keep separate client objects, route in FastAPI layer only |
-| Commit `.env` with keys | Use `.env.example` template, document required keys |
-| Run installer without admin | Use [Launch-AI-Tools-NoAdmin.ps1](Launch-AI-Tools-NoAdmin.ps1) for launch-only, or run admin shell |
-| Test outside Docker | Docker ensures dependency consistency; test inside container |
+## 🚨 Common Pitfalls
+
+| ❌ Mistake | ✅ Fix | Why It Matters |
+|-----------|--------|----------------|
+| Hardcode port `8000` | Query Port Manager | Multiple tools conflict on same ports |
+| Abstract API providers | Keep separate clients | Reduces complexity, easier debugging |
+| Commit `.env` with keys | Use `env.template` | Security - keys exposed in repo |
+| Run installer without admin | Use [Launch-AI-Tools-NoAdmin.ps1](../Launch-AI-Tools-NoAdmin.ps1) | Chocolatey/Docker need elevation |
+| Skip `docker compose down` | Always stop before rebuild | Container state persists, causes confusion |
+| Import Port-Manager.ps1 | Dot-source it: `. $PSScriptRoot\scripts\Port-Manager.ps1` | Import-Module creates isolation issues |
+| Disable cagent dry-run | Never - enforced by code | Security - prevents accidental destructive runs |
+| Set both PowerInfer HTTP + CLI | Use HTTP only | CLI is fallback if HTTP unavailable |
+
+---
+
+## 📦 Project Structure
+
+```
+AI-Tools/
+├── ai_web_app.py              # FastAPI server (975 lines) - main app
+├── AI-Toolkit-Auto.ps1        # Combined installer + launcher
+├── docker-compose.yml         # Multi-service orchestration
+├── Dockerfile.ai-toolkit      # Python app container
+├── port-registry.json         # Port allocation registry (in %USERPROFILE%\AI-Tools)
+├── env.template               # API key template (copy to .env)
+├── scripts/
+│   ├── Port-Manager.ps1       # Core port management functions
+│   └── port-cli.ps1           # CLI wrapper for port operations
+├── integrations/
+│   ├── python-port-helper.py  # Python bindings for Port Manager
+│   └── node-port-helper.js    # Node.js bindings for Port Manager
+├── templates/
+│   └── index.html             # Web UI for chat interface
+└── .github/workflows/
+    ├── psscriptanalyzer.yml   # PowerShell linting
+    ├── docker-compose-validate.yml
+    └── portmanager-tests.yml  # Port Manager tests
+```
+
+---
+
+## 🎯 Agent Definitions
+
+The FastAPI app includes agent definitions at [ai_web_app.py](../ai_web_app.py#L200-L380) for frontend consumption. These agents represent different responsibilities in the codebase:
+
+1. **Python Developer Agent** - FastAPI/Python code modifications
+2. **DevOps & Deployment Agent** - Docker, port allocation, CI/CD
+3. **Network Infrastructure Agent** - (Reserved for future network features)
+4. **Database & Data Agent** - (Reserved for future data features)
+5. **Testing & QA Agent** - Tests, quality checks, CI workflows
+6. **Documentation Agent** - READMEs, inline docs, setup guides
+
+**Note**: These are **informational structures** exposed via `/api/agents` endpoint, not actual separate codebases.
+
+---
+
+## 🔍 Data Flows
+
+### API Request Flow
+```
+Browser → http://localhost:11000/api/chat
+  ↓
+FastAPI (ai_web_app.py)
+  ↓
+Route by model param:
+  - "gpt-4" → openai_client.chat.completions.create()
+  - "claude-3" → anthropic_client.messages.create()
+  - "gemini-pro" → genai.GenerativeModel().generate_content()
+  ↓
+External API (OpenAI/Anthropic/Google)
+  ↓
+Stream response back to browser
+```
+
+### Port Allocation Flow
+```
+Script needs port
+  ↓
+Get-AvailablePort -ApplicationName "app" -PreferredPort 11000
+  ↓
+Check %USERPROFILE%\AI-Tools\port-registry.json
+  ↓
+If available: Register-Port -ApplicationName "app" -Port 11000
+  ↓
+Return port to script
+```
+
+### Docker Container Startup
+```
+docker compose up --build
+  ↓
+Read .env for API keys (or $env:* variables)
+  ↓
+Build Dockerfile.ai-toolkit (Python 3.11 + deps)
+  ↓
+Mount volumes: ./:/workspace, docker.sock
+  ↓
+Start FastAPI on container port 8000
+  ↓
+Expose on host port 11000 (Port Manager registered)
+```
+
+---
+
+## 🛠️ Extension Points
+
+### Adding a New AI Provider
+
+1. **Add client initialization** in [ai_web_app.py](../ai_web_app.py#L86-L108):
+```python
+newprovider_key = os.getenv("NEWPROVIDER_API_KEY")
+newprovider_client = None
+if newprovider_key:
+    newprovider_client = NewProvider(api_key=newprovider_key)
+```
+
+2. **Add routing logic** in `/api/chat` endpoint (around line 400):
+```python
+elif "newmodel" in model_name.lower():
+    if not newprovider_client:
+        raise HTTPException(status_code=503, detail="NewProvider not configured")
+    response = newprovider_client.chat(...)
+```
+
+3. **Update environment**:
+   - Add `NEWPROVIDER_API_KEY` to [env.template](../env.template)
+   - Add to [docker-compose.yml](../docker-compose.yml) environment section
+   - Update [AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1#L52-L78) validation
+
+### Adding a New Tool to Installer
+
+Edit [AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1):
+
+1. **Allocate port** (around line 150):
+```powershell
+$newToolPort = Get-AvailablePort -ApplicationName "newtool" -PreferredPort 11005
+Register-Port -ApplicationName "newtool" -Port $newToolPort -Description "New Tool Service"
+```
+
+2. **Add Chocolatey install** (around line 200):
+```powershell
+choco install newtool -y
+```
+
+3. **Add to docker-compose.yml** (if containerized):
+```yaml
+newtool:
+  image: newtool/newtool:latest
+  ports:
+    - "${NEWTOOL_PORT:-11005}:8080"
+```
+
+---
+
+## 📖 References
+
+### Key Files to Read First
+1. [README.md](../README.md) - Quick start and overview
+2. [ai_web_app.py](../ai_web_app.py) - Main application logic
+3. [scripts/Port-Manager.ps1](../scripts/Port-Manager.ps1) - Port management API
+4. [docker-compose.yml](../docker-compose.yml) - Service definitions
+5. [AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1) - Installation flow
+
+### Documentation
+- [docs/PORT-MANAGEMENT-README.md](../docs/PORT-MANAGEMENT-README.md) - Port Manager deep dive
+- [docs/RUNNING-WINDOWS.md](../docs/RUNNING-WINDOWS.md) - Windows service setup (NSSM)
+- [docs/GPU-SETUP.md](../docs/GPU-SETUP.md) - NVIDIA Container Toolkit setup
+- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines
+
+### CI/CD Workflows
+- All workflows require branch prefixes: `feat/`, `fix/`, `hotfix/`, `chore/`, `docs/`, `release/`
+- PSScriptAnalyzer enforces PowerShell best practices
+- Docker compose validation catches syntax errors before deployment
+
+---
+
+## ✅ Quick Checklist for Changes
+
+### Before Committing
+- [ ] All API keys in `.env` or environment variables (never committed)
+- [ ] Port Manager queries used (no hardcoded ports)
+- [ ] PowerShell scripts dot-source Port-Manager.ps1
+- [ ] Docker: `docker compose config` validates successfully
+- [ ] PowerShell: `Invoke-ScriptAnalyzer` passes (or suppressed with reason)
+
+### Before Deploying
+- [ ] `.env` file exists with all three API keys
+- [ ] Docker Desktop running (Windows)
+- [ ] Port registry initialized: `Test-Path $env:USERPROFILE\AI-Tools\port-registry.json`
+- [ ] Admin privileges if running [AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1)
+
+### When Adding Features
+- [ ] Follow existing patterns (see Code Patterns section)
+- [ ] Don't abstract API providers unless truly necessary
+- [ ] Update [env.template](../env.template) for new environment variables
+- [ ] Document in relevant README or inline comments
+
+---
+
+## 🎓 Learning Resources
+
+**PowerShell Port Manager**:
+- Read [scripts/Port-Manager.ps1](../scripts/Port-Manager.ps1) functions: `Get-AvailablePort`, `Register-Port`, `Get-RegisteredPort`
+- Example usage: [AI-Toolkit-Auto.ps1](../AI-Toolkit-Auto.ps1#L150-L180)
+
+**FastAPI Multi-Provider Pattern**:
+- Client initialization: [ai_web_app.py](../ai_web_app.py#L86-L108)
+- Routing logic: Search for `elif` chains in `/api/chat` endpoint
+- No shared interface - each provider called directly
+
+**Docker Multi-Service Setup**:
+- Service definitions: [docker-compose.yml](../docker-compose.yml)
+- Volume mounts for nested containers: `/var/run/docker.sock`
+- Environment variable substitution: `${OPENAI_API_KEY}`
+
+---
+
+## 🚀 Getting Started (Developer Quick Start)
+
+```powershell
+# 1. Clone and navigate
+cd c:\Users\south\AI-Tools
+
+# 2. Create .env from template
+Copy-Item env.template .env
+notepad .env  # Add your API keys
+
+# 3. Validate Docker setup
+docker compose config
+
+# 4. Start services
+docker compose up --build -d
+
+# 5. Check logs
+docker compose logs -f
+
+# 6. Test endpoint
+$body = @{message="Hello"; model="gpt-4"} | ConvertTo-Json
+Invoke-WebRequest -Uri http://localhost:11000/api/chat -Method POST `
+  -Headers @{"Content-Type"="application/json"} -Body $body
+
+# 7. View in browser
+Start-Process http://localhost:11000
+```
+
+---
+
+**Status**: Production Ready  
+**Last Validated**: 2026-01-17  
+**Maintained By**: AI Development Team
+
+Questions or issues? Check [CONTRIBUTING.md](../CONTRIBUTING.md) or open an issue.
