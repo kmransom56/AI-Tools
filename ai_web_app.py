@@ -4,7 +4,12 @@ FastAPI application for interacting with AI tools through a web interface
 """
 
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, StreamingResponse
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    FileResponse,
+    StreamingResponse,
+)
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import os
@@ -670,6 +675,62 @@ async def chat_stream(request: ChatRequest):
         except Exception as e:
             yield f"\n[stream error: {e}]\n"
 
+    def anthropic_stream_gen():
+        try:
+            stream = anthropic_client.messages.create(
+                model=request.model,
+                max_tokens=4096,
+                messages=[{"role": "user", "content": request.message}],
+                stream=True,
+            )
+            # Anthropics SDK may yield events; try common fields
+            for event in stream:
+                try:
+                    # content_block_delta with text
+                    delta = getattr(event, "delta", None)
+                    if delta and getattr(delta, "text", None):
+                        yield delta.text
+                    # message_delta with new content
+                    elif getattr(event, "type", "") == "message_delta":
+                        parts = getattr(event, "delta", {}).get("content", [])
+                        for p in parts:
+                            t = p.get("text")
+                            if t:
+                                yield t
+                except Exception:
+                    continue
+        except Exception as e:
+            yield f"\n[stream error: {e}]\n"
+
+    def gemini_stream_gen():
+        try:
+            stream = gemini_client.models.generate_content(
+                model=gemini_model_name,
+                contents=request.message,
+                stream=True,
+            )
+            for event in stream:
+                try:
+                    # Prefer direct text field if present
+                    t = getattr(event, "text", None)
+                    if t:
+                        yield t
+                        continue
+                    # Fallback: iterate candidates/parts for text
+                    candidates = getattr(event, "candidates", None)
+                    if candidates:
+                        for c in candidates:
+                            content = getattr(c, "content", None)
+                            parts = getattr(content, "parts", []) if content else []
+                            for p in parts:
+                                pt = getattr(p, "text", None)
+                                if pt:
+                                    yield pt
+                except Exception:
+                    continue
+        except Exception as e:
+            yield f"\n[stream error: {e}]\n"
+
     async def local_full_response():
         # Fallback: call non-stream path and return text
         data = await chat(request)
@@ -686,12 +747,30 @@ async def chat_stream(request: ChatRequest):
                 )
             return StreamingResponse(openai_stream_gen(), media_type="text/plain")
 
+        if request.model.startswith("claude"):
+            if not anthropic_client:
+                return JSONResponse(
+                    status_code=400,
+                    content={"success": False, "error": "Anthropic not configured"},
+                )
+            return StreamingResponse(anthropic_stream_gen(), media_type="text/plain")
+
+        if request.model == "gemini-pro":
+            if not gemini_client:
+                return JSONResponse(
+                    status_code=400,
+                    content={"success": False, "error": "Gemini not configured"},
+                )
+            return StreamingResponse(gemini_stream_gen(), media_type="text/plain")
+
         # Chunked fallback for other providers
         text = await local_full_response()
         return StreamingResponse(chunked_text(text), media_type="text/plain")
     except Exception as e:
         logger.error(f"Stream chat error: {e}", exc_info=True)
-        return JSONResponse(status_code=500, content={"success": False, "error": str(e)})
+        return JSONResponse(
+            status_code=500, content={"success": False, "error": str(e)}
+        )
 
 
 @app.post("/api/chat")
