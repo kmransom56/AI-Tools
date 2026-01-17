@@ -1,20 +1,19 @@
-FROM nvidia/cuda:11.4.3-runtime-ubuntu20.04
+# Multi-stage build for Tesla K80 optimization
+# Compute Capability 3.7 - Kepler architecture
 
-# IMPORTANT: Tesla K80 GPUs (Compute Capability 3.7) support CUDA 11.x
-# This version matches driver 475.14 (CUDA 11.4 compatible)
-# CUDA 12.x is NOT supported by Maxwell architecture (K80)
+FROM nvidia/cuda:11.4.3-devel-ubuntu20.04 AS builder
+
+# IMPORTANT: K80 needs CUDA 11.x. CUDA 12.x is NOT supported by Maxwell/Kepler.
 
 WORKDIR /app
 
-# Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1 \
-    TOKENIZERS_PARALLELISM=false \
-    PIP_NO_CACHE_DIR=1
+    PYTHONUNBUFFERED=1
 
-# Install system dependencies
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.9 \
+    python3.9-dev \
     python3.9-venv \
     python3-pip \
     git \
@@ -22,22 +21,67 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN python3.9 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+# Create virtual environment
+RUN python3.9 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies
+# Install dependencies in venv
 COPY requirements.txt .
-RUN python3.9 -m pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Create necessary directories
-RUN mkdir -p /app/config /app/templates /app/workspace
+# ============================================================
+# Final runtime stage
+# ============================================================
+
+FROM nvidia/cuda:11.4.3-runtime-ubuntu20.04
+
+WORKDIR /app
+
+# Set environment variables optimized for older GPUs
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    TOKENIZERS_PARALLELISM=false \
+    CUDA_DEVICE_ORDER=PCI_BUS_ID \
+    CUDA_VISIBLE_DEVICES=0 \
+    OMP_NUM_THREADS=4 \
+    MKL_NUM_THREADS=4 \
+    PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH="/app"
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.9 \
+    python3-pip \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy virtual environment from builder and fix permissions
+COPY --from=builder /opt/venv /opt/venv
+RUN chown -R 1000:1000 /opt/venv
+
+# Create application directories and user
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app/config /app/templates /app/logs && \
+    chown -R appuser:appuser /app
 
 # Copy application files
 COPY ai_web_app.py /app/
-COPY templates/index.html /app/templates/
+COPY templates/ /app/templates/
+COPY config/ /app/config/
+RUN chown -R appuser:appuser /app
 
-# Expose web interface port
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health || exit 1
+
+# Expose port
 EXPOSE 8000
 
-# Start web server
-CMD ["python3.9", "-m", "uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start application using the venv python explicitly
+# Using slightly more conservative settings for older hardware
+CMD ["/opt/venv/bin/python3", "-m", "uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--loop", "uvloop", "--http", "httptools"]

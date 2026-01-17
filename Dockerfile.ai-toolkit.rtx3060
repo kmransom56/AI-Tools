@@ -45,7 +45,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512 \
     OMP_NUM_THREADS=8 \
     MKL_NUM_THREADS=8 \
-    PATH="/opt/venv/bin:$PATH"
+    PATH="/opt/venv/bin:$PATH" \
+    PYTHONPATH="/app"
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -55,8 +56,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy virtual environment from builder
+# Copy virtual environment from builder and fix permissions
 COPY --from=builder /opt/venv /opt/venv
+RUN chown -R 1000:1000 /opt/venv
 
 # Create application directories and user
 RUN useradd -m -u 1000 appuser && \
@@ -79,5 +81,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Expose port
 EXPOSE 8000
 
-# Start application
-CMD ["uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--loop", "uvloop", "--http", "httptools"]
+# Start application using the venv python explicitly
+CMD ["/opt/venv/bin/python3", "-m", "uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--loop", "uvloop", "--http", "httptools"]

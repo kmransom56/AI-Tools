@@ -34,13 +34,14 @@ services:
   tabbyml:
     image: tabbyml/tabby:latest
     container_name: tabbyml
-    command: ["serve", "--model", "StarCoder-1B", "--device", "cpu"]
+    command: ["serve", "--model", "StarCoder-1B", "--device", "cuda"]
     ports:
       - "11001:8080"
     volumes:
       - tabby-data:/data
+    # Use GPU for acceleration
     environment:
-      CUDA_VISIBLE_DEVICES: ""
+      - CUDA_VISIBLE_DEVICES=0
     deploy:
       resources:
         reservations:
