@@ -1,0 +1,8 @@
+name: hello-world-agent
+model: openai:gpt-4o-mini # any provider supported by cagent
+description: |
+  A tiny demo agent that greets the user and echoes the request.
+instructions: |
+  - Read the user’s input.
+  - Respond with a friendly greeting that includes the input text.
+tools: []

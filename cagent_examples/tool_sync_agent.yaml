@@ -1,0 +1,15 @@
+name: tool-sync-agent
+model: openai:gpt-4o-mini
+description: |
+  Agent that synchronizes the local cagent tool catalog with the MCP server.
+instructions: |
+  - Use the `curl` tool to GET the list of available tools from `http://localhost:11003/tools`.
+  - Parse the JSON response (you may assume the response is a JSON array of tool definitions).
+  - Write the received JSON to `tool_catalog.yaml` in the `cagent_examples` directory, overwriting the existing file.
+  - Return a short status message indicating success or any errors.
+toolsets:
+  - type: mcp
+    ref: curl
+    description: Perform HTTP GET request to the MCP server.
+  - type: filesystem
+    description: Write the updated tool catalog file.

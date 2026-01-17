@@ -1,0 +1,15 @@
+name: git-sync-agent
+model: openai:gpt-4o-mini
+description: |
+  Agent that synchronizes a local Git repository with its remote origin.
+instructions: |
+  - Use the `git` tool to check the current branch.
+  - Pull the latest commits from `origin`.
+  - If there are uncommitted changes, stage all files, create a commit with a concise message, and push to the remote.
+  - Return a summary of actions performed (e.g., "Pulled 3 commits, pushed 1 new commit").
+toolsets:
+  - type: mcp
+    ref: git
+    description: Perform Git operations (status, pull, add, commit, push).
+  - type: filesystem
+    description: Read/write files if needed for commit messages.

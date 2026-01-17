@@ -1,0 +1,173 @@
+# cagent tool catalog – list of all available tools (example set)
+# This file can be referenced in any agent definition via the `toolsets` field.
+# Each entry defines a tool type and, when applicable, a reference to an external MCP tool.
+
+toolsets:
+  # Built‑in reasoning tool
+  - type: think
+    description: Internal reasoning helper used by the agent.
+
+  # Filesystem access – read/write files, list directories
+  - type: filesystem
+    description: Allows the agent to read, write and list files on the host.
+
+  # Environment variable access
+  - type: env
+    description: Read environment variables from the host.
+
+  # Execute arbitrary shell commands (use with caution)
+  - type: exec
+    description: Run shell commands on the host.
+
+  # Clipboard interaction
+  - type: clipboard
+    description: Read from and write to the system clipboard.
+
+  # Web search via DuckDuckGo (MCP tool)
+  - type: mcp
+    ref: duckduckgo
+    description: Perform web searches using DuckDuckGo.
+
+  # HTTP request tool (curl)
+  - type: mcp
+    ref: curl
+    description: Issue HTTP GET/POST requests.
+
+  # Git operations
+  - type: mcp
+    ref: git
+    description: Clone, pull, push repositories.
+
+  # Docker control
+  - type: mcp
+    ref: docker
+    description: Manage Docker containers and images.
+
+  # OpenAI API access
+  - type: mcp
+    ref: openai
+    description: Call OpenAI models via the OpenAI API.
+
+  # Anthropic API access
+  - type: mcp
+    ref: anthropic
+    description: Call Anthropic Claude models via the Anthropic API.
+
+  # Google Gemini API access
+  - type: mcp
+    ref: gemini
+    description: Call Google Gemini models via the Gemini API.
+
+  # JSON parsing / generation
+  - type: mcp
+    ref: json
+    description: Parse and generate JSON data.
+
+  # Python code execution
+  - type: mcp
+    ref: python
+    description: Execute Python snippets safely.
+
+  # Search tool (generic)
+  - type: mcp
+    ref: search
+    description: Generic search tool for various providers.
+
+  # File summarization (e.g., summarize a document)
+  - type: mcp
+    ref: summarize
+    description: Summarize text or documents.
+
+  # Image generation (e.g., DALL·E, Stable Diffusion)
+  - type: mcp
+    ref: image-gen
+    description: Generate images from text prompts.
+
+  # Speech synthesis
+  - type: mcp
+    ref: tts
+    description: Convert text to speech.
+
+  # Speech recognition
+  - type: mcp
+    ref: stt
+    description: Convert speech audio to text.
+
+  # Calendar / scheduling
+  - type: mcp
+    ref: calendar
+    description: Manage calendar events.
+
+  # Email sending
+  - type: mcp
+    ref: email
+    description: Send emails via SMTP.
+
+  # Database query
+  - type: mcp
+    ref: sql
+    description: Execute SQL queries against a database.
+
+  # Vector store interaction
+  - type: mcp
+    ref: vectordb
+    description: Query and upsert vectors in a vector database.
+
+  # Knowledge base lookup
+  - type: mcp
+    ref: kb
+    description: Retrieve information from a knowledge base.
+
+  # Task queue / background jobs
+  - type: mcp
+    ref: queue
+    description: Enqueue and manage background tasks.
+
+  # Logging utility
+  - type: mcp
+    ref: logger
+    description: Write structured logs.
+
+  # Metrics / monitoring
+  - type: mcp
+    ref: metrics
+    description: Emit metrics for monitoring systems.
+
+  # Authentication / token handling
+  - type: mcp
+    ref: auth
+    description: Manage authentication tokens and secrets.
+
+  # File compression / archiving
+  - type: mcp
+    ref: archive
+    description: Create and extract archive files (zip, tar).
+
+  # PDF manipulation
+  - type: mcp
+    ref: pdf
+    description: Read, write and modify PDF documents.
+
+  # Spreadsheet manipulation
+  - type: mcp
+    ref: spreadsheet
+    description: Read and write Excel/CSV files.
+
+  # Data visualization
+  - type: mcp
+    ref: viz
+    description: Generate charts and graphs from data.
+
+  # Notification service
+  - type: mcp
+    ref: notify
+    description: Send push or desktop notifications.
+
+  # Remote procedure call (RPC)
+  - type: mcp
+    ref: rpc
+    description: Invoke remote procedures via gRPC or HTTP.
+
+  # Custom user‑defined tool placeholder
+  - type: custom
+    description: Placeholder for user‑defined tools.

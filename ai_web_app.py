@@ -25,6 +25,9 @@ import shlex
 
 from contextlib import asynccontextmanager
 
+# Import cagent integration
+from cagent_integration import router as cagent_router
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -60,6 +63,9 @@ async def lifespan(app: FastAPI):
     logger.info("AI Toolkit Web Interface Shutting Down")
 
 app = FastAPI(title="AI Toolkit Web Interface", lifespan=lifespan)
+
+# Register cagent integration router
+app.include_router(cagent_router)
 
 
 # Configure templates - support both Docker (/app/templates) and local (./templates) paths

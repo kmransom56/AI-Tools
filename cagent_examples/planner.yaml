@@ -1,0 +1,9 @@
+name: planner
+model: anthropic:claude-3.5-sonnet
+description: |
+  Takes a user request and decides which tool/agent should handle it.
+instructions: |
+  - If the request asks for a calculation, output "run:calculator".
+  - If the request asks for a summary, output "run:summary-agent".
+  - Otherwise output "run:echo-agent".
+tools: []

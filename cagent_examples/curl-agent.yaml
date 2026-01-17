@@ -1,0 +1,12 @@
+name: curl-agent
+model: openai:gpt-4o-mini
+description: |
+  Agent that can perform HTTP requests using curl.
+instructions: |
+  - Use the `curl` tool to make GET, POST, PUT, DELETE requests as instructed.
+  - Return the response body and status code.
+  - Handle errors gracefully and report them.
+toolsets:
+  - type: mcp
+    ref: curl
+    description: Perform HTTP requests via curl.

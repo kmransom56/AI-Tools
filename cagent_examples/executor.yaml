@@ -1,0 +1,7 @@
+name: echo-agent
+model: openai:gpt-4o-mini
+description: |
+  Echoes back the user’s text.
+instructions: |
+  - Return the exact text the user sent, prefixed with "Echo: ".
+tools: []

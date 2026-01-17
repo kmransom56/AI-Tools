@@ -1,0 +1,11 @@
+name: filesystem-agent
+model: openai:gpt-4o-mini
+description: |
+  Agent that can interact with the host filesystem (read, write, list files).
+instructions: |
+  - Use the `filesystem` tool to perform any file operations requested by the user.
+  - Do not execute commands that could delete system files unless explicitly asked.
+  - Return a concise summary of the operation results.
+toolsets:
+  - type: filesystem
+    description: Allows reading, writing, and listing files on the host.

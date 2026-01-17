@@ -1,0 +1,23 @@
+name: monitor-workflow
+description: |
+  Periodically checks health of cagent & mcp-server. Restarts any container that fails.
+steps:
+  - name: check_cagent
+    agent: ./executor.yaml
+    input: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:11002/healthz'
+    output: cagent_status
+
+  - name: maybe_restart_cagent
+    when: cagent_status != "200"
+    agent: ./docker-agent.yaml
+    input: "docker restart cagent"
+
+  - name: check_mcp
+    agent: ./executor.yaml
+    input: 'curl -s -o /dev/null -w "%{http_code}" http://localhost:11003/healthz'
+    output: mcp_status
+
+  - name: maybe_restart_mcp
+    when: mcp_status != "200"
+    agent: ./docker-agent.yaml
+    input: "docker restart mcp-server"

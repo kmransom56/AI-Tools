@@ -1,0 +1,416 @@
+<!-- Cagent Code Generation Section -->
+<div class="section" id="cagent-section">
+  <h2>🤖 AI Code Generation</h2>
+  <p>
+    Generate code using specialized AI agents for different programming
+    languages
+  </p>
+
+  <div class="form-group">
+    <label for="language-select">Programming Language:</label>
+    <select id="language-select" class="form-control">
+      <option value="python">Python</option>
+      <option value="typescript">TypeScript</option>
+      <option value="go">Go</option>
+      <option value="java">Java</option>
+      <option value="mcp_server">MCP Server Config</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="code-description"
+      >Describe the code you want to generate:</label
+    >
+    <textarea
+      id="code-description"
+      class="form-control"
+      rows="4"
+      placeholder="Example: Create a REST API endpoint that returns user data from a database"
+    ></textarea>
+  </div>
+
+  <div class="form-group">
+    <label>
+      <input type="checkbox" id="run-ci-checkbox" checked />
+      Run automated tests after generation
+    </label>
+  </div>
+
+  <div class="button-group">
+    <button onclick="generateCode()" class="btn btn-primary">
+      Generate Code
+    </button>
+    <button onclick="runWorkflow()" class="btn btn-success">
+      Generate + Test (Full Workflow)
+    </button>
+  </div>
+
+  <div id="generation-output" class="output-box" style="display: none">
+    <h3>Generation Result:</h3>
+    <pre id="generation-result"></pre>
+  </div>
+</div>
+
+<!-- Cagent Agent Browser Section -->
+<div class="section" id="agents-section">
+  <h2>🔧 Available Agents</h2>
+  <p>Browse and invoke specialized cagent agents</p>
+
+  <button onclick="loadAgents()" class="btn btn-secondary">
+    Refresh Agent List
+  </button>
+
+  <div id="agents-list" class="agents-grid">
+    <!-- Dynamically populated -->
+  </div>
+
+  <div id="agent-invoke-panel" style="display: none">
+    <h3>Invoke Agent: <span id="selected-agent-name"></span></h3>
+    <div class="form-group">
+      <label for="agent-input">Input:</label>
+      <textarea
+        id="agent-input"
+        class="form-control"
+        rows="3"
+        placeholder="Enter input for the agent"
+      ></textarea>
+    </div>
+    <button onclick="invokeSelectedAgent()" class="btn btn-primary">
+      Run Agent
+    </button>
+    <div id="agent-output" class="output-box" style="display: none">
+      <pre id="agent-result"></pre>
+    </div>
+  </div>
+</div>
+
+<style>
+  .section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+
+  .btn-primary {
+    background: #007bff;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #0056b3;
+  }
+
+  .btn-success {
+    background: #28a745;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background: #218838;
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background: #5a6268;
+  }
+
+  .output-box {
+    margin-top: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+  }
+
+  .output-box pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+  }
+
+  .agents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .agent-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .agent-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .agent-card h4 {
+    margin: 0 0 10px 0;
+    color: #007bff;
+  }
+
+  .agent-card p {
+    margin: 0;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .agent-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  .badge-generator {
+    background: #e7f3ff;
+    color: #0066cc;
+  }
+
+  .badge-workflow {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .badge-tool {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .badge-coordinator {
+    background: #f8d7da;
+    color: #721c24;
+  }
+</style>
+
+<script>
+  let selectedAgent = null;
+
+  async function generateCode() {
+    const language = document.getElementById("language-select").value;
+    const description = document.getElementById("code-description").value;
+
+    if (!description.trim()) {
+      alert("Please enter a description of the code to generate");
+      return;
+    }
+
+    const outputBox = document.getElementById("generation-output");
+    const resultPre = document.getElementById("generation-result");
+
+    outputBox.style.display = "block";
+    resultPre.textContent = "Generating code...";
+
+    try {
+      const response = await fetch("/api/cagent/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          language: language,
+          input: description,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resultPre.textContent = `✅ Success!\n\nAgent: ${data.agent}\nLanguage: ${data.language}\n\nOutput:\n${data.output}`;
+      } else {
+        resultPre.textContent = `❌ Error:\n${data.error || "Generation failed"}`;
+      }
+    } catch (error) {
+      resultPre.textContent = `❌ Error:\n${error.message}`;
+    }
+  }
+
+  async function runWorkflow() {
+    const language = document.getElementById("language-select").value;
+    const description = document.getElementById("code-description").value;
+    const runCI = document.getElementById("run-ci-checkbox").checked;
+
+    if (!description.trim()) {
+      alert("Please enter a description of the code to generate");
+      return;
+    }
+
+    const outputBox = document.getElementById("generation-output");
+    const resultPre = document.getElementById("generation-result");
+
+    outputBox.style.display = "block";
+    resultPre.textContent = "Running full workflow (generation + testing)...";
+
+    try {
+      const response = await fetch("/api/cagent/workflow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          language: language,
+          input: description,
+          run_ci: runCI,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resultPre.textContent = `✅ Workflow Complete!\n\nLanguage: ${data.language}\nWorkflow: ${data.workflow}\n\nOutput:\n${data.output}`;
+      } else {
+        resultPre.textContent = `❌ Error:\n${data.error || "Workflow failed"}`;
+      }
+    } catch (error) {
+      resultPre.textContent = `❌ Error:\n${error.message}`;
+    }
+  }
+
+  async function loadAgents() {
+    const agentsList = document.getElementById("agents-list");
+    agentsList.innerHTML = "<p>Loading agents...</p>";
+
+    try {
+      const response = await fetch("/api/cagent/agents");
+      const data = await response.json();
+
+      if (data.categorized) {
+        agentsList.innerHTML = "";
+
+        // Render categorized agents
+        for (const [category, agents] of Object.entries(data.categorized)) {
+          if (agents.length === 0) continue;
+
+          const categoryDiv = document.createElement("div");
+          categoryDiv.style.gridColumn = "1 / -1";
+          categoryDiv.innerHTML = `<h3 style="margin: 20px 0 10px 0; text-transform: capitalize;">${category}</h3>`;
+          agentsList.appendChild(categoryDiv);
+
+          agents.forEach((agent) => {
+            const card = createAgentCard(agent, category);
+            agentsList.appendChild(card);
+          });
+        }
+      }
+    } catch (error) {
+      agentsList.innerHTML = `<p>Error loading agents: ${error.message}</p>`;
+    }
+  }
+
+  function createAgentCard(agent, category) {
+    const card = document.createElement("div");
+    card.className = "agent-card";
+    card.onclick = () => selectAgent(agent);
+
+    const badgeClass = `badge-${
+      category === "generators"
+        ? "generator"
+        : category === "workflows"
+          ? "workflow"
+          : category === "coordinators"
+            ? "coordinator"
+            : "tool"
+    }`;
+
+    card.innerHTML = `
+        <h4>${agent.name}</h4>
+        <p>${(agent.size / 1024).toFixed(1)} KB</p>
+        <span class="agent-badge ${badgeClass}">${category}</span>
+    `;
+
+    return card;
+  }
+
+  function selectAgent(agent) {
+    selectedAgent = agent;
+    document.getElementById("selected-agent-name").textContent = agent.name;
+    document.getElementById("agent-invoke-panel").style.display = "block";
+    document.getElementById("agent-output").style.display = "none";
+  }
+
+  async function invokeSelectedAgent() {
+    if (!selectedAgent) return;
+
+    const input = document.getElementById("agent-input").value;
+    const outputBox = document.getElementById("agent-output");
+    const resultPre = document.getElementById("agent-result");
+
+    outputBox.style.display = "block";
+    resultPre.textContent = `Invoking ${selectedAgent.name}...`;
+
+    try {
+      const response = await fetch("/api/cagent/invoke", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          agent_file: selectedAgent.name,
+          input: input,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resultPre.textContent = `✅ Success!\n\nAgent: ${data.agent}\n\nOutput:\n${data.output}`;
+      } else {
+        resultPre.textContent = `❌ Error:\n${data.error || "Agent execution failed"}`;
+      }
+    } catch (error) {
+      resultPre.textContent = `❌ Error:\n${error.message}`;
+    }
+  }
+
+  // Auto-load agents on page load
+  document.addEventListener("DOMContentLoaded", loadAgents);
+</script>

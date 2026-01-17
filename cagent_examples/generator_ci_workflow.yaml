@@ -1,0 +1,61 @@
+#!/usr/bin/env cagent run
+
+agents:
+  root:
+    model: gpt
+    description: Generator → CI workflow
+    instruction: |
+      This workflow orchestrates code generation followed by continuous‑integration testing.
+      It receives a JSON payload with the fields:
+        - language: "python" | "typescript" | "go" | "java"
+        - input: description of the code to generate
+      The workflow performs the following steps:
+        1. Select the appropriate generator agent based on the language.
+        2. Invoke the generator agent with the provided input.
+        3. Capture the path of the generated source file(s) returned by the generator.
+        4. Invoke the CI/testing agent (`ci_agent.yaml`) with the generated file path.
+        5. Return the CI result (pass/fail and output) to the caller.
+
+      The workflow should be implemented using sub‑agents:
+        - `generator` – one of the language‑specific generator agents.
+        - `ci` – the CI/testing agent (`ci_agent.yaml`).
+
+      **Implementation notes**:
+        * Use the `run_agent` tool (or equivalent) to call sub‑agents.
+        * Pass the generator's output (file path) as the input to the CI agent.
+        * Return only the final CI summary.
+    sub_agents:
+      - generator
+      - ci
+
+  generator:
+    # This placeholder will be replaced at runtime based on the `language` field.
+    # Example mapping (handled by the orchestrating script or UI):
+    #   python -> python_generator_agent.yaml
+    #   typescript -> typescript_generator_agent.yaml
+    #   go -> go_generator_agent.yaml
+    #   java -> java_generator_agent.yaml
+    model: gpt
+    description: Language‑specific code generator (selected at runtime)
+    instruction: |
+      This agent is dynamically selected; its definition is provided by the caller.
+    toolsets:
+      - type: think
+
+  ci:
+    model: gpt
+    description: CI/testing agent for generated code
+    instruction: |
+      Validate the generated source file(s) using language‑appropriate tests.
+      Input is the absolute path to the generated file.
+      Return a JSON summary `{ "status": "passed"|"failed", "output": "..." }`.
+    toolsets:
+      - type: shell
+      - type: filesystem
+
+models:
+  gpt:
+    provider: openai
+    model: gpt-4o
+    temperature: 0.0
+    max_tokens: 1000

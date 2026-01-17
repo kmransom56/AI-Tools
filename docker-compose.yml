@@ -51,5 +51,44 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
 
+  # -------------------------------------------------------------------
+  # cagent – AI agent runtime with tool integration
+  cagent:
+    image: cagent:latest
+    container_name: cagent
+    command: ["serve"]
+    ports:
+      - "11002:8000"
+    volumes:
+      - ./cagent_examples:/app/examples
+      - ./cagent_examples/tool_catalog.yaml:/app/tool_catalog.yaml
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+  mcp-server:
+    image: mcp-server:latest
+    container_name: mcp-server
+    ports:
+      - "11003:8000"
+    environment:
+      - MCP_API_KEY=${MCP_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
 volumes:
   tabby-data:

@@ -1,0 +1,11 @@
+name: planner-executor-workflow
+description: |
+  A two‑step workflow that uses the planner to decide which executor to run.
+steps:
+  - name: plan
+    agent: ./planner.yaml
+    output: plan_output
+  - name: execute
+    agent: ./executor.yaml
+    when: plan_output == "run:echo-agent"
+    input: "{{ user_input }}"
