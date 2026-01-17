@@ -28,7 +28,23 @@ function Get-PortRegistry {
     Initialize-PortRegistry
     try {
         $content = Get-Content -Path $script:PortRegistryPath -Raw -ErrorAction Stop
-        return $content | ConvertFrom-Json
+        $json = $content | ConvertFrom-Json
+        # Convert PSObject to hashtable for proper indexing support
+        $registry = @{
+            version = $json.version
+            createdAt = $json.createdAt
+            registeredPorts = @{}
+        }
+        if ($json.registeredPorts) {
+            foreach ($appName in $json.registeredPorts.PSObject.Properties.Name) {
+                $registry.registeredPorts[$appName] = @{
+                    port = $json.registeredPorts.$appName.port
+                    description = $json.registeredPorts.$appName.description
+                    registeredAt = $json.registeredPorts.$appName.registeredAt
+                }
+            }
+        }
+        return $registry
     }
     catch {
         Write-Error "Failed to read port registry: $_"
@@ -151,18 +167,25 @@ function Test-PortAvailable {
     return ($Port -notin $usedPorts)
 }
 
-# Export functions for use in other scripts
-Export-ModuleMember -Function @(
-    'Get-AvailablePort',
-    'Register-Port',
-    'Get-ApplicationPort',
-    'Get-RegisteredPorts',
-    'Get-UsedPorts',
-    'Test-PortAvailable',
-    'Get-PortRegistry',
-    'Save-PortRegistry',
-    'Initialize-PortRegistry'
-)
+# Export functions for use in other scripts (only if running as a module)
+if ($PSScriptRoot -and (Get-PSCallStack)[-1].Command -ne '<ScriptBlock>') {
+    try {
+        Export-ModuleMember -Function @(
+            'Get-AvailablePort',
+            'Register-Port',
+            'Get-ApplicationPort',
+            'Get-RegisteredPorts',
+            'Get-UsedPorts',
+            'Test-PortAvailable',
+            'Get-PortRegistry',
+            'Save-PortRegistry',
+            'Initialize-PortRegistry'
+        )
+    }
+    catch {
+        # Silently ignore if not running as module
+    }
+}
 
 # Verbose output
 Write-Verbose "Port Manager loaded. Registry: $script:PortRegistryPath"

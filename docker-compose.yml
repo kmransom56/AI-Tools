@@ -29,9 +29,9 @@ services:
     image: tabbyml/tabby:latest
     container_name: tabbyml
     command: ["serve", "--model", "StarCoder-1B", "--device", "cpu", "--chat-model", "Qwen2-1.5B-Instruct"]
-    # If you want to expose TabbyML on a host port, set a mapping (example: 3000:3000)
-    # ports:
-    #  - "3000:3000"
+    # Expose TabbyML on host port 11001 (registered via Port Manager)
+    ports:
+      - "11001:8080"
     volumes:
       - tabby-data:/data
     restart: unless-stopped
