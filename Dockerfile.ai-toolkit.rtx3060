@@ -6,28 +6,30 @@ FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04 AS builder
 WORKDIR /app
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1 \
-    TOKENIZERS_PARALLELISM=false
+    PYTHONUNBUFFERED=1
 
-# Install build dependencies (minimal, only what's needed for compilation)
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 \
     python3.10-dev \
+    python3.10-venv \
     python3-pip \
     git \
     curl \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip, setuptools, wheel in builder
-RUN python3 -m pip install --upgrade pip setuptools wheel
+# Create virtual environment
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy requirements and install in builder stage
+# Install dependencies in venv
 COPY requirements.txt .
-RUN python3 -m pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
 # ============================================================
-# Final runtime stage - minimal base for deployment
+# Final runtime stage
 # ============================================================
 
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
@@ -42,9 +44,10 @@ ENV DEBIAN_FRONTEND=noninteractive \
     CUDA_VISIBLE_DEVICES=0 \
     PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512 \
     OMP_NUM_THREADS=8 \
-    MKL_NUM_THREADS=8
+    MKL_NUM_THREADS=8 \
+    PATH="/opt/venv/bin:$PATH"
 
-# Install only runtime dependencies (no build tools)
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 \
     python3-pip \
@@ -52,36 +55,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy compiled packages from builder stage
-COPY --from=builder /root/.local /root/.local
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
 
-# Update PATH for pip packages
-ENV PATH=/root/.local/bin:$PATH
-
-# Create application directories
-RUN mkdir -p /app/config /app/templates /app/logs
+# Create application directories and user
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /app/config /app/templates /app/logs && \
+    chown -R appuser:appuser /app
 
 # Copy application files
 COPY ai_web_app.py /app/
 COPY templates/ /app/templates/
 COPY config/ /app/config/
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Non-root user for security (optional but recommended)
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-# USER appuser
+    CMD curl -f http://localhost:8000/api/health || exit 1
 
 # Expose port
 EXPOSE 8000
 
-# Start application with optimized Uvicorn settings for single GPU
-CMD ["python3", "-m", "uvicorn", \
-    "ai_web_app:app", \
-    "--host", "0.0.0.0", \
-    "--port", "8000", \
-    "--workers", "1", \
-    "--loop", "uvloop", \
-    "--http", "httptools"]
+# Start application
+CMD ["uvicorn", "ai_web_app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--loop", "uvloop", "--http", "httptools"]
