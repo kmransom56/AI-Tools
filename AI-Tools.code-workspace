@@ -1,13 +1,13 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "../OneDrive/Documents/powershell-signer"
-		}
-	],
-	"settings": {
-		"powershell.cwd": "AI-Tools"
-	}
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "git.sshCommand": "ssh -i $HOME/.ssh/id_ed25519_github_personal -o IdentitiesOnly=yes",
+        "remote.SSH.useLocalServer": false,
+        "remote.SSH.showLoginTerminal": true,
+        "remote.SSH.path": "ssh"
+    }
 }

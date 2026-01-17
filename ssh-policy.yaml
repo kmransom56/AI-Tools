@@ -1,0 +1,35 @@
+version: 1
+defaults:
+  serverAliveInterval: 30
+  serverAliveCountMax: 3
+  identitiesOnly: true
+  forwardAgent: false
+  strictHostKeyChecking: "ask"
+  hashKnownHosts: true
+  preferredAuthentications: "publickey"
+  pubkeyAuthentication: true
+  tcpKeepAlive: false
+  compression: false
+
+profiles:
+  github_personal:
+    hosts: ["github.com", "github-ai-tools"]
+    identityFile: "~/.ssh/id_ed25519_github_personal"
+    user: "git"
+
+  fortinet_infra:
+    hosts: ["forti-*"]
+    identityFile: "~/.ssh/id_ed25519_forti"
+    user: "admin"
+
+  jump_hosts:
+    hosts: ["jump-*"]
+    identityFile: "~/.ssh/id_ed25519_jump"
+    user: "keith"
+    forwardAgent: true
+
+  automation:
+    hosts: ["automation-*"]
+    identityFile: "~/.ssh/id_ed25519_automation"
+    user: "automation"
+    forwardAgent: false

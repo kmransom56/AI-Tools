@@ -3,156 +3,524 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Toolkit - Web Interface</title>
+    <title>AI Toolkit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        /* existing styles unchanged */
-        /* ... (omitted for brevity in commit) ... */
-        .examples-panel {
-            position: absolute;
-            top: 70px;
-            right: 40px;
-            width: 360px;
-            max-height: 60vh;
-            overflow-y: auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            padding: 12px;
-            z-index: 50;
-            display: none;
+        :root {
+            --bg: #05060b;
+            --card: rgba(255, 255, 255, 0.05);
+            --panel: rgba(14, 18, 33, 0.72);
+            --glass: rgba(255, 255, 255, 0.08);
+            --accent: #5b8df7;
+            --accent-2: #84f3c5;
+            --text: #f2f4ff;
+            --muted: #9aa4c3;
+            --border: rgba(255, 255, 255, 0.08);
         }
-        .examples-panel.active { display: block; }
-        .examples-list { list-style: none; padding: 0; margin: 0; }
-        .examples-list li { padding: 8px; border-bottom: 1px solid #eee; display:flex; justify-content:space-between; align-items:center; }
-        .examples-list li:last-child { border-bottom: none; }
-        .examples-list .meta { font-size: 12px; color:#666; }
-        .examples-button { margin-left: 12px; padding: 8px 12px; background: rgba(255,255,255,0.12); border-radius: 8px; color:white; border:none; cursor:pointer }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Space Grotesk', 'Inter', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at 20% 20%, rgba(91,141,247,0.12), transparent 35%),
+                                    radial-gradient(circle at 80% 0%, rgba(132,243,197,0.16), transparent 32%),
+                                    radial-gradient(circle at 50% 80%, rgba(255,255,255,0.06), transparent 35%),
+                                    var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .shell {
+            max-width: 1220px;
+            margin: 0 auto;
+            padding: 32px 24px 40px;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .brand-mark {
+            height: 44px;
+            width: 44px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            display: grid;
+            place-items: center;
+            font-size: 22px;
+            color: #02030a;
+            box-shadow: 0 12px 40px rgba(91,141,247,0.35);
+        }
+        .brand h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: -0.5px;
+        }
+        .brand small { color: var(--muted); }
+        .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        button {
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--glass);
+            color: var(--text);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 600;
+            letter-spacing: -0.1px;
+            transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+        }
+        button.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #02030a; border: none; }
+        button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.16); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+            gap: 18px;
+        }
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-card { display: flex; flex-direction: column; min-height: 70vh; overflow: hidden; }
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 18px 8px;
+            gap: 12px;
+        }
+        .status-dots { display: flex; gap: 8px; flex-wrap: wrap; }
+        .status-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+        .dot.on { background: #4ade80; box-shadow: 0 0 0 4px rgba(74,222,128,0.12); }
+
+        .chat-log {
+            flex: 1;
+            padding: 16px 18px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .bubble {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            align-items: start;
+            animation: fadeIn 0.2s ease;
+        }
+        .avatar {
+            height: 36px;
+            width: 36px;
+            border-radius: 12px;
+            background: var(--glass);
+            display: grid;
+            place-items: center;
+            font-size: 16px;
+            color: var(--text);
+        }
+        .balloon {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 14px;
+            line-height: 1.5;
+            color: var(--text);
+            white-space: pre-wrap;
+        }
+        .bubble.user .balloon { background: rgba(91,141,247,0.14); border-color: rgba(91,141,247,0.3); }
+
+        .input-bar {
+            display: flex;
+            gap: 10px;
+            padding: 14px 18px 16px;
+            border-top: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.05));
+        }
+        .input-bar input {
+            flex: 1;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 12px 12px;
+            color: var(--text);
+            font-size: 15px;
+        }
+        .input-bar input:focus { outline: 2px solid rgba(91,141,247,0.35); }
+
+        .side-column { display: flex; flex-direction: column; gap: 12px; }
+        .panel {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .panel h3 { margin: 0; font-size: 16px; letter-spacing: -0.2px; }
+        .muted { color: var(--muted); font-size: 13px; }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 12px;
+        }
+        .list { display: flex; flex-direction: column; gap: 8px; }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,0.04);
+        }
+        .row strong { letter-spacing: -0.1px; }
+        .tag { font-size: 12px; color: var(--muted); }
+        .agents { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+        .agent-card {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border);
+            min-height: 96px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .agent-card .title { font-weight: 600; }
+        .agent-card .chip { color: var(--muted); font-size: 12px; }
+
+        .examples-drawer {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            width: 360px;
+            max-height: 70vh;
+            overflow-y: auto;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 18px 60px rgba(0,0,0,0.4);
+            padding: 14px;
+            display: none;
+            z-index: 80;
+        }
+        .examples-drawer.active { display: block; }
+        .examples-drawer h4 { margin: 4px 0 8px 0; }
+        .examples-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+        .examples-list li { border: 1px solid var(--border); border-radius: 12px; padding: 10px; background: rgba(255,255,255,0.04); }
+        .examples-list .meta { font-size: 12px; color: var(--muted); }
+
+        .loading { display: none; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+        .loading.active { display: inline-flex; }
+        .spinner {
+            width: 16px; height: 16px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: var(--accent);
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        :root.light {
+            --bg: #f6f8ff;
+            --card: rgba(0,0,0,0.02);
+            --panel: rgba(255,255,255,0.85);
+            --glass: rgba(0,0,0,0.04);
+            --accent: #2257ff;
+            --accent-2: #0cc398;
+            --text: #0a0b12;
+            --muted: #58607a;
+            --border: rgba(0,0,0,0.08);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 AI Toolkit</h1>
-            <div class="model-selector">
-                <label for="model-select">Model:</label>
-                <select id="model-select">
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-                    <option value="gemini-pro">Gemini Pro</option>
-                    <option value="sgpt">Shell-GPT</option>
-                </select>
-                <button id="open-examples" class="examples-button">Examples</button>
-            </div>
-        </div>
-        
-        <div class="examples-panel" id="examples-panel">
-            <h3>cagent Examples</h3>
-            <div id="examples-list-wrapper">
-                <div id="examples-loading">Loading examples…</div>
-                <ul id="examples-list" class="examples-list"></ul>
-            </div>
-            <div style="font-size:12px;color:#666;margin-top:8px;">Runs via Docker image <code>docker/cagent:latest</code> in <strong>dry-run mode</strong> by default.</div>
-        </div>
-        
-        <div class="chat-container" id="chat-container">
-            <div class="message assistant">
-                <div class="message-avatar">🤖</div>
-                <div class="message-bubble">
-                    Hello! I'm your AI assistant. I have access to multiple AI models including GPT-4, Claude, and Gemini. How can I help you today?
+    <div class="shell">
+        <header>
+            <div class="brand">
+                <div class="brand-mark">AI</div>
+                <div>
+                    <h1>AI Toolkit</h1>
+                    <small>Multi-provider chat • Local + cloud</small>
                 </div>
             </div>
-        </div>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <div>Thinking...</div>
-        </div>
-        
-        <div class="input-container">
-            <form class="input-form" id="chat-form">
-                <input 
-                    type="text" 
-                    class="input-field" 
-                    id="message-input" 
-                    placeholder="Type your message here..."
-                    autocomplete="off"
-                >
-                <button type="submit" class="send-button" id="send-button">Send</button>
-            </form>
+            <div class="toolbar">
+                <div class="loading" id="status-loading"><div class="spinner"></div><span>Syncing status…</span></div>
+                <button id="refresh-status">Refresh status</button>
+                <button id="theme-toggle">Theme</button>
+                <button id="open-examples" class="primary">Cagent examples</button>
+            </div>
+        </header>
+
+        <div class="grid">
+            <section class="card chat-card">
+                <div class="chat-header">
+                    <div class="status-dots" id="status-dots"></div>
+                    <div class="pill">
+                        <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></span>
+                        <span id="model-pill">Model: gpt-4</span>
+                    </div>
+                </div>
+
+                <div class="chat-log" id="chat-log">
+                    <div class="bubble assistant">
+                        <div class="avatar">🤖</div>
+                        <div class="balloon">Hello! I can route to OpenAI, Anthropic, Gemini, or your local PowerInfer/TurboSparse backends. Ask away.</div>
+                    </div>
+                </div>
+
+                <div class="input-bar">
+                    <select id="model-select" class="pill" style="min-width: 170px;">
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                        <option value="gemini-pro">Gemini Pro</option>
+                        <option value="sgpt">Shell-GPT</option>
+                    </select>
+                    <input id="message-input" type="text" placeholder="Ask something..." autocomplete="off" />
+                    <button id="send" class="primary">Send</button>
+                </div>
+            </section>
+
+            <aside class="side-column">
+                <div class="card panel">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                        <div>
+                            <h3>Models & backends</h3>
+                            <div class="muted">Live from /api/models and /api/health</div>
+                        </div>
+                        <button id="refresh-models" style="padding:8px 10px;">Reload</button>
+                    </div>
+                    <div class="list" id="models-list"></div>
+                </div>
+
+                <div class="card panel">
+                    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                        <div>
+                            <h3>Specialized agents</h3>
+                            <div class="muted">From /api/agents</div>
+                        </div>
+                        <button id="refresh-agents" style="padding:8px 10px;">Reload</button>
+                    </div>
+                    <div class="agents" id="agents-grid"></div>
+                </div>
+            </aside>
         </div>
     </div>
 
+    <div class="examples-drawer" id="examples-drawer">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <h4 style="margin:0;">cagent examples</h4>
+            <button id="close-examples" style="padding:6px 10px;">Close</button>
+        </div>
+        <div class="muted" style="margin-bottom:8px;">docker/cagent:latest • dry-run enforced</div>
+        <div id="examples-loading" class="loading"><div class="spinner"></div><span>Loading…</span></div>
+        <ul id="examples-list" class="examples-list"></ul>
+    </div>
+
     <script>
-        const chatContainer = document.getElementById('chat-container');
-        const chatForm = document.getElementById('chat-form');
+        const chatLog = document.getElementById('chat-log');
         const messageInput = document.getElementById('message-input');
-        const sendButton = document.getElementById('send-button');
+        const sendBtn = document.getElementById('send');
         const modelSelect = document.getElementById('model-select');
-        const loading = document.getElementById('loading');
-        const examplesPanel = document.getElementById('examples-panel');
-        const openExamples = document.getElementById('open-examples');
+        const modelPill = document.getElementById('model-pill');
+        const statusDots = document.getElementById('status-dots');
+        const statusLoading = document.getElementById('status-loading');
+        const modelsList = document.getElementById('models-list');
+        const agentsGrid = document.getElementById('agents-grid');
+        const examplesDrawer = document.getElementById('examples-drawer');
         const examplesList = document.getElementById('examples-list');
         const examplesLoading = document.getElementById('examples-loading');
 
-        function addMessage(content, role) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}`;
-            
+        function bubble(content, role) {
+            const wrap = document.createElement('div');
+            wrap.className = `bubble ${role}`;
             const avatar = document.createElement('div');
-            avatar.className = 'message-avatar';
-            avatar.textContent = role === 'user' ? '👤' : '🤖';
-            
-            const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-            bubble.textContent = content;
-            
-            if (role === 'user') {
-                messageDiv.appendChild(bubble);
-                messageDiv.appendChild(avatar);
-            } else {
-                messageDiv.appendChild(avatar);
-                messageDiv.appendChild(bubble);
-            }
-            
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            avatar.className = 'avatar';
+            avatar.textContent = role === 'user' ? '🧑' : '🤖';
+            const balloon = document.createElement('div');
+            balloon.className = 'balloon';
+            balloon.textContent = content;
+            wrap.appendChild(avatar);
+            wrap.appendChild(balloon);
+            chatLog.appendChild(wrap);
+            chatLog.scrollTop = chatLog.scrollHeight;
         }
 
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error';
-            errorDiv.textContent = `Error: ${message}`;
-            chatContainer.appendChild(errorDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+        function errorBalloon(text) {
+            bubble(`Error: ${text}`, 'assistant');
+        }
+
+        async function sendMessage() {
+            const msg = messageInput.value.trim();
+            if (!msg) return;
+            const model = modelSelect.value;
+            modelPill.textContent = `Model: ${model}`;
+            bubble(msg, 'user');
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            messageInput.disabled = true;
+            try {
+                const res = await fetch('/api/chat/stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg, model })
+                });
+                if (res.ok && res.body) {
+                    const reader = res.body.getReader();
+                    const decoder = new TextDecoder();
+                    const wrap = document.createElement('div');
+                    wrap.className = 'bubble assistant';
+                    const avatar = document.createElement('div');
+                    avatar.className = 'avatar';
+                    avatar.textContent = '🤖';
+                    const balloon = document.createElement('div');
+                    balloon.className = 'balloon';
+                    wrap.appendChild(avatar);
+                    wrap.appendChild(balloon);
+                    chatLog.appendChild(wrap);
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        const chunk = decoder.decode(value);
+                        balloon.textContent += chunk;
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                    }
+                } else {
+                    const rest = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: msg, model })
+                    });
+                    const data = await rest.json();
+                    if (data.success) bubble(data.response || '(empty response)', 'assistant');
+                    else errorBalloon(data.error || 'Unknown error');
+                }
+            } catch (err) {
+                errorBalloon(err.message);
+            } finally {
+                sendBtn.disabled = false;
+                messageInput.disabled = false;
+                messageInput.focus();
+            }
+        }
+
+        async function loadModels() {
+            modelsList.innerHTML = '<div class="muted">Loading models…</div>';
+            try {
+                const res = await fetch('/api/models');
+                const data = await res.json();
+                if (!data.models) throw new Error('No models returned');
+                modelSelect.innerHTML = '';
+                data.models.forEach((m) => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.name;
+                    modelSelect.appendChild(opt);
+                });
+                modelsList.innerHTML = '';
+                data.models.forEach((m) => {
+                    const row = document.createElement('div');
+                    row.className = 'row';
+                    row.innerHTML = `<div><strong>${m.name}</strong><div class="tag">${m.provider}</div></div><div class="pill">${m.id}</div>`;
+                    modelsList.appendChild(row);
+                });
+                modelPill.textContent = `Model: ${modelSelect.value}`;
+            } catch (err) {
+                modelsList.innerHTML = `<div class="muted">Failed to load models: ${err.message}</div>`;
+            }
+        }
+
+        async function loadAgents() {
+            agentsGrid.innerHTML = '<div class="muted">Loading agents…</div>';
+            try {
+                const res = await fetch('/api/agents');
+                const data = await res.json();
+                if (!data.agents) throw new Error('No agents returned');
+                agentsGrid.innerHTML = '';
+                data.agents.forEach((a) => {
+                    const card = document.createElement('div');
+                    card.className = 'agent-card';
+                    card.innerHTML = `<div class="title">${a.name}</div><div class="chip">${a.role}</div><div class="muted">${a.purpose}</div>`;
+                    agentsGrid.appendChild(card);
+                });
+            } catch (err) {
+                agentsGrid.innerHTML = `<div class="muted">Failed to load agents: ${err.message}</div>`;
+            }
+        }
+
+        async function loadStatus() {
+            statusLoading.classList.add('active');
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                const entries = Object.entries(data.apis_configured || {});
+                statusDots.innerHTML = '';
+                entries.forEach(([key, val]) => {
+                    const dot = document.createElement('div');
+                    dot.className = 'status-dot';
+                    dot.innerHTML = `<span class="dot ${val ? 'on' : ''}"></span><span>${key}</span>`;
+                    statusDots.appendChild(dot);
+                });
+            } catch (err) {
+                statusDots.innerHTML = `<div class="muted">Health check failed: ${err.message}</div>`;
+            } finally {
+                statusLoading.classList.remove('active');
+            }
         }
 
         async function loadExamples() {
-            examplesLoading.style.display = 'block';
+            examplesLoading.classList.add('active');
             examplesList.innerHTML = '';
             try {
                 const res = await fetch('/api/cagent/examples');
                 const data = await res.json();
-                examplesLoading.style.display = 'none';
+                examplesLoading.classList.remove('active');
                 if (data.count === 0) {
-                    examplesList.innerHTML = '<li>No examples found in repository.</li>';
+                    examplesList.innerHTML = '<li class="muted">No examples found.</li>';
                     return;
                 }
-                data.examples.forEach(ex => {
+                data.examples.forEach((ex) => {
                     const li = document.createElement('li');
-                    const meta = document.createElement('div');
-                    meta.className = 'meta';
-                    meta.innerHTML = `<strong>${ex.name}</strong> <div>${ex.tag ? ex.tag : ''} ${ex.dry_run===true?'<em>(dry_run)</em>':''}</div>`;
-                    const runBtn = document.createElement('button');
-                    runBtn.textContent = 'Run';
-                    runBtn.style.padding = '6px 10px';
-                    runBtn.style.borderRadius = '6px';
-                    runBtn.style.cursor = 'pointer';
-                    runBtn.onclick = async () => {
-                        // Append as user message
-                        addMessage(`Run example: ${ex.path}`, 'user');
-                        // Call the API to run
-                        addMessage('Starting example (dry-run enforced)...', 'assistant');
+                    li.innerHTML = `<strong>${ex.name}</strong><div class="meta">${ex.tag || ''} ${ex.dry_run === true ? '(dry_run)' : ''}</div>`;
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Run dry-run';
+                    btn.style.marginTop = '8px';
+                    btn.onclick = async () => {
+                        bubble(`Run example: ${ex.path}`, 'user');
+                        bubble('Starting example (dry-run enforced)...', 'assistant');
                         try {
                             const runResp = await fetch('/api/cagent/run', {
                                 method: 'POST',
@@ -161,66 +529,44 @@
                             });
                             const runData = await runResp.json();
                             if (runResp.ok && runData.success) {
-                                addMessage(runData.logs || 'No logs returned', 'assistant');
+                                bubble(runData.logs || 'No logs returned', 'assistant');
                             } else {
-                                addMessage((runData.detail || runData.error || 'Run failed') , 'assistant');
+                                bubble(runData.detail || runData.error || 'Run failed', 'assistant');
                             }
                         } catch (err) {
-                            addMessage('Network error: ' + err.message, 'assistant');
+                            bubble('Network error: ' + err.message, 'assistant');
                         }
                     };
-                    li.appendChild(meta);
-                    li.appendChild(runBtn);
+                    li.appendChild(btn);
                     examplesList.appendChild(li);
                 });
             } catch (err) {
-                examplesLoading.textContent = 'Failed to load examples';
-                console.error(err);
+                examplesLoading.classList.remove('active');
+                examplesList.innerHTML = `<li class="muted">Failed to load examples: ${err.message}</li>`;
             }
         }
 
-        openExamples.addEventListener('click', () => {
-            if (examplesPanel.classList.contains('active')) {
-                examplesPanel.classList.remove('active');
-            } else {
-                examplesPanel.classList.add('active');
-                loadExamples();
-            }
+        // Event wiring
+        sendBtn.addEventListener('click', (e) => { e.preventDefault(); sendMessage(); });
+        messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+        document.getElementById('refresh-status').addEventListener('click', loadStatus);
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const isLight = document.documentElement.classList.toggle('light');
+            try { localStorage.setItem('ai-toolkit-theme', isLight ? 'light' : 'dark'); } catch {}
         });
+        document.getElementById('refresh-models').addEventListener('click', loadModels);
+        document.getElementById('refresh-agents').addEventListener('click', loadAgents);
+        document.getElementById('open-examples').addEventListener('click', () => { examplesDrawer.classList.add('active'); loadExamples(); });
+        document.getElementById('close-examples').addEventListener('click', () => { examplesDrawer.classList.remove('active'); });
 
-        chatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (!message) return;
-            const selectedModel = modelSelect.value;
-            addMessage(message, 'user');
-            messageInput.value = '';
-            sendButton.disabled = true;
-            messageInput.disabled = true;
-            loading.classList.add('active');
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message, model: selectedModel })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    addMessage(data.response, 'assistant');
-                } else {
-                    showError(data.error || 'Unknown error occurred');
-                }
-            } catch (error) {
-                showError(`Network error: ${error.message}`);
-            } finally {
-                sendButton.disabled = false;
-                messageInput.disabled = false;
-                loading.classList.remove('active');
-                messageInput.focus();
-            }
-        });
-
-        // Focus input on load
+        // Bootstrap
+        try {
+            const saved = localStorage.getItem('ai-toolkit-theme');
+            if (saved === 'light') document.documentElement.classList.add('light');
+        } catch {}
+        loadStatus();
+        loadModels();
+        loadAgents();
         messageInput.focus();
     </script>
 </body>
