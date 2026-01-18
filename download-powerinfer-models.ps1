@@ -2,8 +2,8 @@
 # Downloads recommended models for local LLM inference
 
 param(
-    [string]$ModelName = "bamboo-dpo",
-    [string]$ModelsDir = ".\PowerInfer\models"
+    [string]$ModelName = 'bamboo-dpo',
+    [string]$ModelsDir = '.\PowerInfer\models'
 )
 
 # Create models directory
@@ -13,33 +13,33 @@ Write-Host "`n🚀 PowerInfer Model Downloader" -ForegroundColor Cyan
 Write-Host "================================`n" -ForegroundColor Cyan
 
 # Install huggingface-hub if not already installed
-Write-Host "📦 Checking dependencies..." -ForegroundColor Yellow
+Write-Host '📦 Checking dependencies...' -ForegroundColor Yellow
 pip install --quiet huggingface-hub
 
 $models = @{
-    "bamboo-dpo"    = @{
-        repo = "PowerInfer/Bamboo-DPO-v0.1-gguf"
-        file = "bamboo-7b-dpo-v0.1.q4.powerinfer.gguf"
-        size = "~4GB"
-        desc = "Bamboo-7B DPO Q4 (Recommended - Fast & High Quality)"
+    'bamboo-dpo'    = @{
+        repo = 'PowerInfer/Bamboo-DPO-v0.1-gguf'
+        file = 'bamboo-7b-dpo-v0.1.Q4_0.gguf'
+        size = '~4GB'
+        desc = 'Bamboo-7B DPO Q4 (Recommended - Fast & High Quality)'
     }
-    "bamboo-base"   = @{
-        repo = "PowerInfer/Bamboo-base-v0.1-gguf"
-        file = "bamboo-7b-v0.1.q4.powerinfer.gguf"
-        size = "~4GB"
-        desc = "Bamboo-7B Base Q4 (Fast & Good Quality)"
+    'bamboo-base'   = @{
+        repo = 'PowerInfer/Bamboo-base-v0.1-gguf'
+        file = 'bamboo-7b-v0.1.q4.powerinfer.gguf'
+        size = '~4GB'
+        desc = 'Bamboo-7B Base Q4 (Fast & Good Quality)'
     }
-    "prosparse-7b"  = @{
-        repo = "SparseLLM/prosparse-llama-2-7b-gguf"
-        file = "prosparse-llama-2-7b.q4_0.gguf"
-        size = "~3.5GB"
-        desc = "ProSparse Llama2-7B Q4 (Fastest - 90% Sparsity)"
+    'prosparse-7b'  = @{
+        repo = 'SparseLLM/prosparse-llama-2-7b-gguf'
+        file = 'prosparse-llama-2-7b.q4_0.gguf'
+        size = '~3.5GB'
+        desc = 'ProSparse Llama2-7B Q4 (Fastest - 90% Sparsity)'
     }
-    "prosparse-13b" = @{
-        repo = "SparseLLM/prosparse-llama-2-13b-gguf"
-        file = "prosparse-llama-2-13b.q4_0.gguf"
-        size = "~7GB"
-        desc = "ProSparse Llama2-13B Q4 (Larger - Better Reasoning)"
+    'prosparse-13b' = @{
+        repo = 'SparseLLM/prosparse-llama-2-13b-gguf'
+        file = 'prosparse-llama-2-13b.q4_0.gguf'
+        size = '~7GB'
+        desc = 'ProSparse Llama2-13B Q4 (Larger - Better Reasoning)'
     }
 }
 
@@ -85,6 +85,21 @@ except Exception as e:
 "@
 
 $pythonScript | python -
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "`n⚠️  HuggingFace Hub download failed. Attempting direct download..." -ForegroundColor Yellow
+    $directUrl = "https://huggingface.co/$($selectedModel.repo)/resolve/main/$($selectedModel.file)?download=true"
+    $outputFile = "$ModelsDir\$($selectedModel.file)"
+    
+    try {
+        Write-Host "   URL: $directUrl" -ForegroundColor Gray
+        Invoke-WebRequest -Uri $directUrl -OutFile $outputFile -UseBasicParsing
+        $LASTEXITCODE = 0
+    }
+    catch {
+        Write-Host "❌ Direct download also failed: $_" -ForegroundColor Red
+        exit 1
+    }
+}
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "`n✅ Model downloaded successfully!" -ForegroundColor Green
@@ -92,8 +107,8 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "   $ModelsDir\$($selectedModel.file)" -ForegroundColor White
     
     Write-Host "`n🚀 Next steps:" -ForegroundColor Cyan
-    Write-Host "   1. Test the model locally:" -ForegroundColor White
-    Write-Host "      cd PowerInfer" -ForegroundColor Gray
+    Write-Host '   1. Test the model locally:' -ForegroundColor White
+    Write-Host '      cd PowerInfer' -ForegroundColor Gray
     Write-Host "      .\build\bin\main.exe -m ..\models\$($selectedModel.file) -n 128 -t 8 -p `"Hello!`" --vram-budget 10" -ForegroundColor Gray
     Write-Host "`n   2. Start PowerInfer server:" -ForegroundColor White
     Write-Host "      .\build\bin\server.exe -m ..\models\$($selectedModel.file) --host 0.0.0.0 --port 8081 --vram-budget 10 -t 8" -ForegroundColor Gray
@@ -101,6 +116,6 @@ if ($LASTEXITCODE -eq 0) {
 }
 else {
     Write-Host "`n❌ Download failed!" -ForegroundColor Red
-    Write-Host "   Please check your internet connection and try again." -ForegroundColor Yellow
+    Write-Host '   Please check your internet connection and try again.' -ForegroundColor Yellow
     exit 1
 }

@@ -375,8 +375,8 @@ Error: Out of memory
 - [x] Build scripts (setup-powerinfer.ps1)
 - [x] Model downloader (download-powerinfer-models.ps1)
 - [x] Docker integration (Dockerfile + docker-compose)
-- [x] Build PowerInfer (`.\setup-powerinfer.ps1`) (In Progress)
-- [ ] Download model (`.\download-powerinfer-models.ps1`)
+- [x] Build PowerInfer (`.\setup-powerinfer.ps1`) (Completed - CPU Verified)
+- [x] Download model (`.\download-powerinfer-models.ps1`) (In Progress)
 - [x] Web App Integration (Configuration & Docker)
 - [x] VS Code Settings Fix (`settings.json`)
 - [ ] Test CLI integration
