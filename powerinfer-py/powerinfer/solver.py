@@ -7,6 +7,7 @@ from cvxopt import matrix
 import torch
 import pickle
 
+
 def solve_gpu_split(
     activation_path: str,
     neuron: int,
@@ -18,7 +19,6 @@ def solve_gpu_split(
     # Processing activation data
     values = []
     for i in range(layer):
-        # Load and sort activation data for each layer
         freq = torch.load(f"{activation_path}/activation_{i}.pt")
         freq, _ = torch.sort(freq, descending=True)
         freq = freq * -1.0
@@ -63,7 +63,9 @@ def solve_gpu_split(
         lst = [0] * (neuron * layer + layer)
         for j in range(neuron):
             lst[i * neuron + j] = 1
-        lst[neuron * layer + i] = -1000000  # Arbitrary large negative number as an upper bound
+        lst[
+            neuron * layer + i
+        ] = -1000000  # Arbitrary large negative number as an upper bound
         coeff.append(lst)
         h.append(0)
 
@@ -77,14 +79,20 @@ def solve_gpu_split(
     I = set(range(neuron * layer + layer))
     B = set()
 
-    # Solving the ILP problem
-    (status, x) = ilp(c, G, h, None, None, B, I, options={'tm_lim' : 30000}) # with 30s timeout
-    print(f"ILP Status: {status}")
-    ans = list(x)
-    print(f"Total Activation Units: {sum(ans)}")
+    # Solving the ILP problem with timeout guard
+    try:
+        (status, x) = ilp(
+            c, G, h, None, None, B, I, options={"tm_lim": 30000}
+        )  # 30s timeout
+        print(f"ILP Status: {status}")
+        ans = list(x)
+        print(f"Total Activation Units: {sum(ans)}")
+    except Exception as e:
+        print(f"PowerInfer: ILP solve failed: {e}")
+        return [0 for _ in range(layer)]
 
     aligned_lst = []
     for i in range(layer):
-        aligned_lst.append(sum(ans[i * neuron:i * neuron + neuron] * batch))
+        aligned_lst.append(sum(ans[i * neuron : (i * neuron + neuron)] * batch))
 
     return aligned_lst
