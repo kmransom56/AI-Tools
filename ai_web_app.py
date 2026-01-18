@@ -451,6 +451,37 @@ async def call_local_chat(host: str, model: str, message: str, timeout: float = 
         )
 
 
+async def call_powerinfer(host: str, message: str, timeout: float = 120.0):
+    """Call PowerInfer's native /completion endpoint (llama.cpp style)."""
+    # PowerInfer uses llama.cpp's completion endpoint, not OpenAI-compatible API
+    # Note: Local LLM generation can be slow, so we use a longer timeout
+    if host.endswith("/"):
+        host = host[:-1]
+    
+    url = f"{host}/completion"
+    
+    payload = {
+        "prompt": message,
+        "n_predict": 512,  # Max tokens to generate
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "stop": ["</s>", "\n\n\n"],  # Stop sequences
+    }
+    
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        resp = await client.post(url, json=payload)
+        if resp.status_code >= 400:
+            raise HTTPException(status_code=resp.status_code, detail=resp.text)
+        data = resp.json()
+        # PowerInfer returns {"content": "generated text", ...}
+        if "content" in data:
+            return data["content"].strip()
+        raise HTTPException(
+            status_code=500, detail="Unexpected PowerInfer response format"
+        )
+
+
+
 def run_cli_chat(cmd_template: str, message: str, timeout: float = 60.0):
     """Run a local CLI command for LLM inference. Expects a {prompt} placeholder in the template."""
     if "{prompt}" not in cmd_template:
@@ -1027,16 +1058,16 @@ async def chat(request: ChatRequest):
                 }
 
         elif request.model == "powerinfer":
-            if powerinfer_host and powerinfer_model:
-                content = await call_local_chat(
-                    powerinfer_host, powerinfer_model, request.message
+            if powerinfer_host:
+                content = await call_powerinfer(
+                    powerinfer_host, request.message
                 )
             elif powerinfer_cli and powerinfer_model:
                 content = run_cli_chat(powerinfer_cli, request.message)
             else:
                 return {
                     "success": False,
-                    "error": "PowerInfer not configured. Set POWERINFER_HOST/POWERINFER_MODEL or POWERINFER_CLI/POWERINFER_MODEL.",
+                    "error": "PowerInfer not configured. Set POWERINFER_HOST or POWERINFER_CLI/POWERINFER_MODEL.",
                 }
             return {
                 "success": True,
