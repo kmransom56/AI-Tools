@@ -20,6 +20,9 @@ services:
       - PYTHONUNBUFFERED=1
       - TOKENIZERS_PARALLELISM=false
       - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+      # MCP Discovery Service integration
+      - MCP_DISCOVERY_URL=http://mcp-discovery:5000
+      - MCP_DISCOVERY_TIMEOUT=10.0
     deploy:
       resources:
         reservations:
@@ -76,19 +79,82 @@ services:
       retries: 3
       start_period: 5s
   mcp-server:
-    image: mcp-server:latest
+    image: ghcr.io/github/github-mcp-server:latest
     container_name: mcp-server
     ports:
       - "11003:8000"
     environment:
       - MCP_API_KEY=${MCP_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD","curl","-f","http://localhost:8000/healthz"]
+      test: ["CMD","curl","-f","http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
+    labels:
+      mcp.type: github
+      mcp.name: github-mcp
+      mcp.endpoint: http://mcp-server:8000
+      mcp.capabilities: "repository,issues,pull_requests"
+
+  # -------------------------------------------------------------------
+  # MCP Discovery Service - Dynamic MCP server discovery
+  # https://github.com/kmransom56/mcp-discovery
+  mcp-discovery-redis:
+    image: redis:7-alpine
+    container_name: mcp-discovery-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --appendfsync everysec
+    volumes:
+      - mcp-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  mcp-discovery:
+    image: kmransom56/mcp-discovery:latest
+    build:
+      context: ../mcp-discovery
+      dockerfile: Dockerfile
+    container_name: mcp-discovery
+    ports:
+      - "5000:5000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=5000
+      - DEBUG=false
+      - REDIS_HOST=mcp-discovery-redis
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DISCOVERY_INTERVAL=30
+      - SERVICE_TTL=60
+      - ENABLE_AUTO_DISCOVERY=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      mcp-discovery-redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    labels:
+      mcp.type: discovery
+      mcp.name: mcp-discovery
+      mcp.endpoint: http://mcp-discovery:5000
+      mcp.capabilities: "discovery,registry,cache"
 
 volumes:
   tabby-data:
+  mcp-redis-data:

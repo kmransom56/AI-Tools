@@ -363,6 +363,31 @@
         const examplesList = document.getElementById('examples-list');
         const examplesLoading = document.getElementById('examples-loading');
 
+        // Unified API response handler
+        async function handleApiResponse(response) {
+            if (!response.ok) {
+                const text = await response.text();
+                let errorMsg = `Server error (${response.status})`;
+                try {
+                    const json = JSON.parse(text);
+                    errorMsg = json.detail || json.error || json.message || errorMsg;
+                } catch {
+                    errorMsg = text.substring(0, 200) || errorMsg;
+                }
+                return { success: false, error: errorMsg };
+            }
+
+            try {
+                return await response.json();
+            } catch (jsonError) {
+                const text = await response.text();
+                return {
+                    success: false,
+                    error: `Invalid JSON response: ${text.substring(0, 200)}`
+                };
+            }
+        }
+
         function bubble(content, role) {
             const wrap = document.createElement('div');
             wrap.className = `bubble ${role}`;
@@ -424,7 +449,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ message: msg, model })
                     });
-                    const data = await rest.json();
+                    const data = await handleApiResponse(rest);
                     if (data.success) bubble(data.response || '(empty response)', 'assistant');
                     else errorBalloon(data.error || 'Unknown error');
                 }
@@ -441,7 +466,11 @@
             modelsList.innerHTML = '<div class="muted">Loading models…</div>';
             try {
                 const res = await fetch('/api/models');
-                const data = await res.json();
+                const data = await handleApiResponse(res);
+                if (!data.success && data.error) {
+                    modelsList.innerHTML = `<div class="muted">Error: ${data.error}</div>`;
+                    return;
+                }
                 if (!data.models) throw new Error('No models returned');
                 modelSelect.innerHTML = '';
                 data.models.forEach((m) => {
@@ -467,7 +496,11 @@
             agentsGrid.innerHTML = '<div class="muted">Loading agents…</div>';
             try {
                 const res = await fetch('/api/agents');
-                const data = await res.json();
+                const data = await handleApiResponse(res);
+                if (!data.success && data.error) {
+                    agentsGrid.innerHTML = `<div class="muted">Error: ${data.error}</div>`;
+                    return;
+                }
                 if (!data.agents) throw new Error('No agents returned');
                 agentsGrid.innerHTML = '';
                 data.agents.forEach((a) => {
@@ -485,7 +518,11 @@
             statusLoading.classList.add('active');
             try {
                 const res = await fetch('/api/health');
-                const data = await res.json();
+                const data = await handleApiResponse(res);
+                if (!data.success && data.error) {
+                    statusDots.innerHTML = `<div class="muted">Error: ${data.error}</div>`;
+                    return;
+                }
                 const entries = Object.entries(data.apis_configured || {});
                 statusDots.innerHTML = '';
                 entries.forEach(([key, val]) => {
@@ -506,7 +543,12 @@
             examplesList.innerHTML = '';
             try {
                 const res = await fetch('/api/cagent/examples');
-                const data = await res.json();
+                const data = await handleApiResponse(res);
+                if (!data.success && data.error) {
+                    examplesLoading.classList.remove('active');
+                    examplesList.innerHTML = `<li class="muted">Error: ${data.error}</li>`;
+                    return;
+                }
                 examplesLoading.classList.remove('active');
                 if (data.count === 0) {
                     examplesList.innerHTML = '<li class="muted">No examples found.</li>';
@@ -527,11 +569,11 @@
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ example_path: ex.path })
                             });
-                            const runData = await runResp.json();
-                            if (runResp.ok && runData.success) {
+                            const runData = await handleApiResponse(runResp);
+                            if (runData.success) {
                                 bubble(runData.logs || 'No logs returned', 'assistant');
                             } else {
-                                bubble(runData.detail || runData.error || 'Run failed', 'assistant');
+                                bubble(runData.error || 'Run failed', 'assistant');
                             }
                         } catch (err) {
                             bubble('Network error: ' + err.message, 'assistant');

@@ -3,9 +3,9 @@ Cagent Integration Module
 Provides endpoints for code generation, CI/CD workflows, and agent orchestration
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 import subprocess
 import os
 import json
@@ -42,15 +42,15 @@ def invoke_powershell_agent(agent_file: str, input_data: str) -> Dict[str, Any]:
     """
     ps_module_path = os.getenv(
         "PORT_MANAGER_MODULE",
-        r"C:\Users\Keith Ransom\AI-Tools\PortManager\PortManager.psm1"
+        r"C:\Users\Keith Ransom\AI-Tools\PortManager\PortManager.psm1",
     )
-    
+
     # Build PowerShell command
     ps_command = f"""
     Import-Module "{ps_module_path}"
     Invoke-ToolAgent -AgentFile '{agent_file}' -Input '{input_data.replace("'", "''")}'
     """
-    
+
     try:
         result = subprocess.run(
             ["powershell", "-NoProfile", "-Command", ps_command],
@@ -58,32 +58,28 @@ def invoke_powershell_agent(agent_file: str, input_data: str) -> Dict[str, Any]:
             text=True,
             timeout=300,  # 5 minute timeout
         )
-        
+
         if result.returncode == 0:
             return {
                 "success": True,
                 "output": result.stdout.strip(),
-                "agent": agent_file
+                "agent": agent_file,
             }
         else:
             return {
                 "success": False,
                 "error": result.stderr.strip() or "Agent execution failed",
-                "agent": agent_file
+                "agent": agent_file,
             }
     except subprocess.TimeoutExpired:
         return {
             "success": False,
             "error": "Agent execution timeout (5 minutes)",
-            "agent": agent_file
+            "agent": agent_file,
         }
     except Exception as e:
         logger.error(f"PowerShell agent invocation failed: {e}")
-        return {
-            "success": False,
-            "error": str(e),
-            "agent": agent_file
-        }
+        return {"success": False, "error": str(e), "agent": agent_file}
 
 
 @router.post("/generate")
@@ -99,26 +95,30 @@ async def generate_code(request: CodeGenerationRequest):
         "java": "java_generator_agent.yaml",
         "mcp_server": "mcp_server_generator.yaml",
     }
-    
+
     agent_file = agent_map.get(request.language.lower())
     if not agent_file:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported language: {request.language}. Supported: {list(agent_map.keys())}"
-        )
-    
+        return {
+            "success": False,
+            "error": f"Unsupported language: {request.language}. Supported: {list(agent_map.keys())}",
+        }
+
     # Invoke the generator agent
     result = invoke_powershell_agent(agent_file, request.input)
-    
+
     if not result.get("success"):
-        raise HTTPException(status_code=500, detail=result.get("error", "Generation failed"))
-    
+        return {
+            "success": False,
+            "error": result.get("error", "Generation failed"),
+            "agent": agent_file,
+        }
+
     return {
         "success": True,
         "language": request.language,
         "agent": agent_file,
-        "output": result.get("output"),
-        "message": f"Code generated successfully using {agent_file}"
+        "response": result.get("output"),
+        "message": f"Code generated successfully using {agent_file}",
     }
 
 
@@ -129,25 +129,31 @@ async def run_workflow(request: WorkflowRequest):
     This chains code generation with automated testing.
     """
     # Prepare workflow input as JSON
-    workflow_input = json.dumps({
-        "language": request.language,
-        "input": request.input,
-        "run_ci": request.run_ci,
-        "options": request.options or {}
-    })
-    
+    workflow_input = json.dumps(
+        {
+            "language": request.language,
+            "input": request.input,
+            "run_ci": request.run_ci,
+            "options": request.options or {},
+        }
+    )
+
     # Invoke the workflow agent
     result = invoke_powershell_agent("generator_ci_workflow.yaml", workflow_input)
-    
+
     if not result.get("success"):
-        raise HTTPException(status_code=500, detail=result.get("error", "Workflow failed"))
-    
+        return {
+            "success": False,
+            "error": result.get("error", "Workflow failed"),
+            "workflow": "generator_ci_workflow.yaml",
+        }
+
     return {
         "success": True,
         "language": request.language,
         "workflow": "generator_ci_workflow.yaml",
-        "output": result.get("output"),
-        "message": "Workflow completed successfully"
+        "response": result.get("output"),
+        "message": "Workflow completed successfully",
     }
 
 
@@ -159,27 +165,30 @@ async def invoke_agent(request: AgentInvokeRequest):
     """
     # Validate agent file exists
     agent_path = os.path.join(
-        r"C:\Users\Keith Ransom\AI-Tools\cagent_examples",
-        request.agent_file
+        r"C:\Users\Keith Ransom\AI-Tools\cagent_examples", request.agent_file
     )
-    
+
     if not os.path.exists(agent_path):
-        raise HTTPException(
-            status_code=404,
-            detail=f"Agent file not found: {request.agent_file}"
-        )
-    
+        return {
+            "success": False,
+            "error": f"Agent file not found: {request.agent_file}",
+        }
+
     # Invoke the agent
     result = invoke_powershell_agent(request.agent_file, request.input)
-    
+
     if not result.get("success"):
-        raise HTTPException(status_code=500, detail=result.get("error", "Agent execution failed"))
-    
+        return {
+            "success": False,
+            "error": result.get("error", "Agent execution failed"),
+            "agent": request.agent_file,
+        }
+
     return {
         "success": True,
         "agent": request.agent_file,
-        "output": result.get("output"),
-        "message": f"Agent {request.agent_file} executed successfully"
+        "response": result.get("output"),
+        "message": f"Agent {request.agent_file} executed successfully",
     }
 
 
@@ -189,36 +198,47 @@ async def list_available_agents():
     List all available cagent agents in the cagent_examples directory.
     """
     examples_dir = r"C:\Users\Keith Ransom\AI-Tools\cagent_examples"
-    
+
     if not os.path.exists(examples_dir):
         return {"agents": [], "count": 0}
-    
+
     agents = []
     for file in os.listdir(examples_dir):
         if file.endswith(".yaml") or file.endswith(".yml"):
             agent_path = os.path.join(examples_dir, file)
-            agents.append({
-                "name": file,
-                "path": agent_path,
-                "size": os.path.getsize(agent_path)
-            })
-    
+            agents.append(
+                {"name": file, "path": agent_path, "size": os.path.getsize(agent_path)}
+            )
+
     # Categorize agents
     categorized = {
         "generators": [a for a in agents if "generator" in a["name"]],
         "workflows": [a for a in agents if "workflow" in a["name"]],
-        "tools": [a for a in agents if any(x in a["name"] for x in ["git", "docker", "curl", "filesystem"])],
+        "tools": [
+            a
+            for a in agents
+            if any(x in a["name"] for x in ["git", "docker", "curl", "filesystem"])
+        ],
         "coordinators": [a for a in agents if "coordinator" in a["name"]],
-        "other": [a for a in agents if not any(
-            x in a["name"] for x in ["generator", "workflow", "git", "docker", "curl", "filesystem", "coordinator"]
-        )]
+        "other": [
+            a
+            for a in agents
+            if not any(
+                x in a["name"]
+                for x in [
+                    "generator",
+                    "workflow",
+                    "git",
+                    "docker",
+                    "curl",
+                    "filesystem",
+                    "coordinator",
+                ]
+            )
+        ],
     }
-    
-    return {
-        "agents": agents,
-        "count": len(agents),
-        "categorized": categorized
-    }
+
+    return {"agents": agents, "count": len(agents), "categorized": categorized}
 
 
 @router.get("/health")
@@ -229,45 +249,47 @@ async def cagent_health():
     """
     ps_module_path = os.getenv(
         "PORT_MANAGER_MODULE",
-        r"C:\Users\Keith Ransom\AI-Tools\PortManager\PortManager.psm1"
+        r"C:\Users\Keith Ransom\AI-Tools\PortManager\PortManager.psm1",
     )
     examples_dir = r"C:\Users\Keith Ransom\AI-Tools\cagent_examples"
-    
+
     checks = {
         "powershell_module": os.path.exists(ps_module_path),
         "examples_directory": os.path.exists(examples_dir),
         "cagent_service": False,  # Will check Docker service
         "mcp_server": False,  # Will check MCP server
     }
-    
+
     # Check if cagent Docker service is running
     try:
         result = subprocess.run(
             ["docker", "ps", "--filter", "name=cagent", "--format", "{{.Names}}"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
         checks["cagent_service"] = "cagent" in result.stdout
     except Exception:
         pass
-    
+
     # Check if MCP server is running
     try:
         result = subprocess.run(
             ["docker", "ps", "--filter", "name=mcp-server", "--format", "{{.Names}}"],
             capture_output=True,
             text=True,
-            timeout=5
+            timeout=5,
         )
         checks["mcp_server"] = "mcp-server" in result.stdout
     except Exception:
         pass
-    
+
     all_healthy = all(checks.values())
-    
+
     return {
         "healthy": all_healthy,
         "checks": checks,
-        "message": "All systems operational" if all_healthy else "Some components unavailable"
+        "message": (
+            "All systems operational" if all_healthy else "Some components unavailable"
+        ),
     }

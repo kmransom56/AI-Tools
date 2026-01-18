@@ -1,22 +1,38 @@
-torch
-transformers
-accelerate
+# AI-Tools Python Dependencies
+# Install with: uv pip install -r requirements.txt
+
+# Core AI Providers
 openai
 anthropic
 google-genai
-shell-gpt
+
+# LangChain (optional, for advanced chains)
 langchain
 langchain-openai
 langchain-anthropic
-requests
-httpx
-python-dotenv
-pyyaml
+
+# CLI Tools
+shell-gpt
 rich
 typer
+
+# Web Framework
 fastapi
-uvicorn
+uvicorn[standard]
 jinja2
+httpx
+
+# ML/Deep Learning (optional, for local inference)
+# torch
+# transformers
+# accelerate
+
+# Utilities
+requests
+python-dotenv
+pyyaml
 docker
-uvloop
-httptools
+
+# Performance (Linux only)
+# uvloop  # Not supported on Windows
+# httptools

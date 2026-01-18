@@ -24,17 +24,45 @@ def main():
         sys.exit(1)
     logger.info(f"✓ Python {sys.version_info.major}.{sys.version_info.minor} detected")
     
-    # Check .env file
-    env_file = os.path.join(os.path.dirname(__file__), '.env')
-    if os.path.exists(env_file):
-        logger.info(f"✓ .env file found at {env_file}")
-        # Load environment variables
-        from dotenv import load_dotenv
-        load_dotenv(env_file)
-        logger.info("✓ Environment variables loaded")
+    # Check API keys from system environment variables (preferred)
+    # .env file is optional fallback for local development only
+    api_keys = {
+        "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+        "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
+        "GEMINI_API_KEY": os.getenv("GEMINI_API_KEY"),
+    }
+
+    # Count configured keys from system env
+    system_keys = sum(1 for v in api_keys.values() if v)
+
+    if system_keys > 0:
+        logger.info(f"✓ {system_keys}/3 API keys found in system environment variables")
     else:
-        logger.warning(f".env file not found at {env_file}")
-        logger.warning("API keys will not be available unless set in system environment")
+        # Only load .env as fallback if no system env vars found
+        env_file = os.path.join(os.path.dirname(__file__), ".env")
+        if os.path.exists(env_file):
+            logger.info("Loading .env file as fallback (system env vars preferred)")
+            try:
+                from dotenv import load_dotenv
+
+                load_dotenv(env_file, override=False)  # Don't override system env vars
+            except ImportError:
+                logger.warning("python-dotenv not installed, skipping .env file")
+        else:
+            logger.warning("No API keys in system environment and no .env file found")
+            logger.warning("Set API keys as system environment variables:")
+            logger.warning("  Windows: setx OPENAI_API_KEY sk-...")
+            logger.warning("  Linux: export OPENAI_API_KEY=sk-...")
+
+    # Show API key status
+    for key_name in ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY"]:
+        value = os.getenv(key_name)
+        if value:
+            # Show masked key for security
+            masked = f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
+            logger.info(f"  {key_name}: {masked}")
+        else:
+            logger.warning(f"  {key_name}: NOT SET")
     
     # Check templates
     templates_dir = os.path.join(os.path.dirname(__file__), 'templates')

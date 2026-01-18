@@ -28,11 +28,15 @@ from contextlib import asynccontextmanager
 # Import cagent integration
 from cagent_integration import router as cagent_router
 
+# Import MCP discovery
+from mcp_discovery import router as mcp_router, mcp_registry, get_mcp_tools_context
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,10 +49,11 @@ async def lifespan(app: FastAPI):
         f"API Clients: OpenAI={bool(openai_client)}, Anthropic={bool(anthropic_client)}, Gemini={bool(gemini_client)}"
     )
     logger.info(f"Docker Client: {docker_client is not None}")
-    
+
     # GPU Warmup
     try:
         import torch
+
         if torch.cuda.is_available():
             # Warm up CUDA kernels
             _ = torch.zeros(1).cuda()
@@ -57,15 +62,25 @@ async def lifespan(app: FastAPI):
             logger.info("CUDA not available, skipping GPU warmup")
     except Exception as e:
         logger.warning(f"GPU Warmup failed or torch not installed: {e}")
-    
+
+    # MCP Discovery initialization
+    try:
+        logger.info(f"MCP Registry: {len(mcp_registry.list_all())} servers registered")
+    except Exception as e:
+        logger.warning(f"MCP Registry initialization: {e}")
+
     logger.info("=" * 60)
     yield
     logger.info("AI Toolkit Web Interface Shutting Down")
+
 
 app = FastAPI(title="AI Toolkit Web Interface", lifespan=lifespan)
 
 # Register cagent integration router
 app.include_router(cagent_router)
+
+# Register MCP discovery router
+app.include_router(mcp_router)
 
 
 # Configure templates - support both Docker (/app/templates) and local (./templates) paths
@@ -139,7 +154,10 @@ except Exception:
 
 class ChatRequest(BaseModel):
     message: str
-    model: str = "gpt-4"  # gpt-4, claude-3-5-sonnet-20241022, gemini-pro, or sgpt
+    model: str = (
+        "gpt-4"  # gpt-4, claude-3-5-sonnet-20241022, gemini-pro, sgpt, cagent, or mcp
+    )
+    include_mcp_tools: bool = False  # Include MCP tools in system prompt
 
 
 class CodeRequest(BaseModel):
@@ -463,6 +481,94 @@ def run_cli_chat(cmd_template: str, message: str, timeout: float = 60.0):
         raise HTTPException(status_code=504, detail="CLI inference timeout")
 
 
+async def route_to_cagent(message: str, include_mcp_context: bool = True) -> dict:
+    """
+    Intelligent routing to cagent based on message content.
+    Detects intent and routes to appropriate cagent agent.
+    Optionally includes MCP tools context for tool-aware responses.
+    """
+    message_lower = message.lower()
+
+    # Inject MCP tools context if requested
+    mcp_context = ""
+    if include_mcp_context:
+        try:
+            mcp_context = await get_mcp_tools_context()
+            if mcp_context:
+                message = f"{mcp_context}\n\n---\n\nUser Request: {message}"
+        except Exception as e:
+            logger.warning(f"Failed to get MCP tools context: {e}")
+
+    # Intent detection patterns
+    code_gen_keywords = ["generate", "create", "write", "build", "implement", "code"]
+    language_keywords = {
+        "python": ["python", "py", "fastapi", "flask", "django"],
+        "typescript": ["typescript", "ts", "react", "next.js", "angular"],
+        "go": ["golang", "go"],
+        "java": ["java", "spring", "maven"],
+        "mcp_server": ["mcp", "model context protocol", "tool catalog"],
+    }
+
+    # Check if this is a code generation request
+    is_code_gen = any(keyword in message_lower for keyword in code_gen_keywords)
+
+    if is_code_gen:
+        # Detect language
+        detected_language = "python"  # default
+        for lang, keywords in language_keywords.items():
+            if any(kw in message_lower for kw in keywords):
+                detected_language = lang
+                break
+
+        # Import the cagent function
+        from cagent_integration import invoke_powershell_agent
+
+        # Map language to agent file
+        agent_map = {
+            "python": "python_generator_agent.yaml",
+            "typescript": "typescript_generator_agent.yaml",
+            "go": "go_generator_agent.yaml",
+            "java": "java_generator_agent.yaml",
+            "mcp_server": "mcp_server_generator.yaml",
+        }
+
+        agent_file = agent_map.get(detected_language)
+        result = invoke_powershell_agent(agent_file, message)
+
+        if result.get("success"):
+            return {
+                "success": True,
+                "response": f"🤖 Cagent ({detected_language}):\n\n{result.get('output', '')}",
+                "model": "cagent",
+                "provider": "cagent",
+                "agent": agent_file,
+                "language": detected_language,
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Cagent error: {result.get('error', 'Unknown error')}",
+            }
+    else:
+        # General query - use coordinator agent
+        from cagent_integration import invoke_powershell_agent
+
+        result = invoke_powershell_agent("coordinator_agent.yaml", message)
+
+        if result.get("success"):
+            return {
+                "success": True,
+                "response": f"🤖 Cagent (Coordinator):\n\n{result.get('output', '')}",
+                "model": "cagent",
+                "provider": "cagent",
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Cagent error: {result.get('error', 'Unknown error')}",
+            }
+
+
 @app.get("/api/cagent/examples")
 async def cagent_examples():
     """Return list of discovered cagent examples with basic metadata."""
@@ -624,6 +730,8 @@ async def get_models():
         },
         {"id": "gemini-pro", "name": "Gemini Pro (Google)", "provider": "google"},
         {"id": "sgpt", "name": "Shell-GPT (CLI)", "provider": "sgpt"},
+        {"id": "cagent", "name": "Cagent (AI Agent with Tools)", "provider": "cagent"},
+        {"id": "mcp", "name": "MCP Tools (Dynamic Discovery)", "provider": "mcp"},
     ]
 
     if (powerinfer_host and powerinfer_model) or (powerinfer_cli and powerinfer_model):
@@ -805,15 +913,30 @@ async def chat(request: ChatRequest):
                     "success": False,
                     "error": "OpenAI API key not configured. Set OPENAI_API_KEY environment variable.",
                 }
+
+            # Build messages with optional MCP tools context
+            messages = []
+            if request.include_mcp_tools:
+                mcp_context = await get_mcp_tools_context()
+                if mcp_context:
+                    messages.append(
+                        {
+                            "role": "system",
+                            "content": f"You have access to the following tools:\n\n{mcp_context}",
+                        }
+                    )
+            messages.append({"role": "user", "content": request.message})
+
             response = openai_client.chat.completions.create(
                 model=request.model,
-                messages=[{"role": "user", "content": request.message}],
+                messages=messages,
             )
             return {
                 "success": True,
                 "response": response.choices[0].message.content,
                 "model": request.model,
                 "provider": "openai",
+                "mcp_tools_included": request.include_mcp_tools,
             }
 
         elif request.model.startswith("claude"):
@@ -926,6 +1049,47 @@ async def chat(request: ChatRequest):
                 "provider": "turbosparse",
             }
 
+        elif request.model == "cagent":
+            # Route to cagent with intelligent intent detection
+            return await route_to_cagent(request.message)
+
+        elif request.model == "mcp":
+            # MCP Tools mode - uses OpenAI with MCP tools context and function calling
+            if not openai_client:
+                return {
+                    "success": False,
+                    "error": "MCP mode requires OpenAI. Set OPENAI_API_KEY.",
+                }
+
+            # Get MCP tools context
+            mcp_context = await get_mcp_tools_context()
+
+            # Build system message with MCP tools
+            system_message = """You are an AI assistant with access to MCP (Model Context Protocol) tools.
+When the user asks to perform an action that requires a tool, explain which tool you would use and with what parameters.
+If the user explicitly asks you to invoke a tool, describe the invocation request.
+
+"""
+            if mcp_context:
+                system_message += mcp_context
+
+            # Call OpenAI with the enhanced context
+            response = openai_client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": request.message},
+                ],
+            )
+
+            return {
+                "success": True,
+                "response": response.choices[0].message.content,
+                "model": "mcp",
+                "provider": "mcp",
+                "mcp_tools_available": bool(mcp_context),
+            }
+
         else:
             return {"success": False, "error": f"Unknown model: {request.model}"}
 
@@ -970,9 +1134,10 @@ async def get_gpu_info():
     """Return detailed GPU status and memory usage"""
     try:
         import torch
+
         if not torch.cuda.is_available():
             return {"available": False, "error": "CUDA not available"}
-        
+
         return {
             "available": True,
             "device_name": torch.cuda.get_device_name(0),
@@ -980,7 +1145,7 @@ async def get_gpu_info():
             "memory_reserved": f"{torch.cuda.memory_reserved(0) / 1024**2:.2f} MB",
             "max_memory_allocated": f"{torch.cuda.max_memory_allocated(0) / 1024**2:.2f} MB",
             "vram_total": f"{torch.cuda.get_device_properties(0).total_memory / 1024**2:.2f} MB",
-            "capability": torch.cuda.get_device_capability(0)
+            "capability": torch.cuda.get_device_capability(0),
         }
     except Exception as e:
         return {"available": False, "error": str(e)}
@@ -992,6 +1157,7 @@ async def health():
     gpu_status = "unknown"
     try:
         import torch
+
         gpu_status = "available" if torch.cuda.is_available() else "unavailable"
     except Exception:
         gpu_status = "torch_not_found"

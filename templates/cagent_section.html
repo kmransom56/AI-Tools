@@ -235,6 +235,37 @@
 <script>
   let selectedAgent = null;
 
+  // Unified API response handler - matches main chat window pattern
+  async function handleApiResponse(response) {
+    // Handle non-OK HTTP status
+    if (!response.ok) {
+      const text = await response.text();
+      let errorMsg = `Server error (${response.status})`;
+      try {
+        const json = JSON.parse(text);
+        errorMsg = json.detail || json.error || json.message || errorMsg;
+      } catch {
+        errorMsg = text.substring(0, 200) || errorMsg;
+      }
+      return { success: false, error: errorMsg };
+    }
+
+    // Parse JSON safely
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      const text = await response.text();
+      return {
+        success: false,
+        error: `Invalid JSON response: ${text.substring(0, 200)}`
+      };
+    }
+
+    // Return the data - it should have success field
+    return data;
+  }
+
   async function generateCode() {
     const language = document.getElementById("language-select").value;
     const description = document.getElementById("code-description").value;
@@ -262,10 +293,10 @@
         }),
       });
 
-      const data = await response.json();
+      const data = await handleApiResponse(response);
 
       if (data.success) {
-        resultPre.textContent = `✅ Success!\n\nAgent: ${data.agent}\nLanguage: ${data.language}\n\nOutput:\n${data.output}`;
+        resultPre.textContent = `✅ Success!\n\nAgent: ${data.agent}\nLanguage: ${data.language}\n\nOutput:\n${data.response}`;
       } else {
         resultPre.textContent = `❌ Error:\n${data.error || "Generation failed"}`;
       }
@@ -303,10 +334,10 @@
         }),
       });
 
-      const data = await response.json();
+      const data = await handleApiResponse(response);
 
       if (data.success) {
-        resultPre.textContent = `✅ Workflow Complete!\n\nLanguage: ${data.language}\nWorkflow: ${data.workflow}\n\nOutput:\n${data.output}`;
+        resultPre.textContent = `✅ Workflow Complete!\n\nLanguage: ${data.language}\nWorkflow: ${data.workflow}\n\nOutput:\n${data.response}`;
       } else {
         resultPre.textContent = `❌ Error:\n${data.error || "Workflow failed"}`;
       }
@@ -321,7 +352,12 @@
 
     try {
       const response = await fetch("/api/cagent/agents");
-      const data = await response.json();
+      const data = await handleApiResponse(response);
+
+      if (!data.success && data.error) {
+        agentsList.innerHTML = `<p>Error: ${data.error}</p>`;
+        return;
+      }
 
       if (data.categorized) {
         agentsList.innerHTML = "";
@@ -399,10 +435,10 @@
         }),
       });
 
-      const data = await response.json();
+      const data = await handleApiResponse(response);
 
       if (data.success) {
-        resultPre.textContent = `✅ Success!\n\nAgent: ${data.agent}\n\nOutput:\n${data.output}`;
+        resultPre.textContent = `✅ Success!\n\nAgent: ${data.agent}\n\nOutput:\n${data.response}`;
       } else {
         resultPre.textContent = `❌ Error:\n${data.error || "Agent execution failed"}`;
       }
