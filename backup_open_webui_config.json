@@ -1,0 +1,72 @@
+{
+  "Hostname": "ddcf3ff7a2c9",
+  "Domainname": "",
+  "User": "0:0",
+  "AttachStdin": false,
+  "AttachStdout": false,
+  "AttachStderr": false,
+  "ExposedPorts": {
+    "8080/tcp": {}
+  },
+  "Tty": false,
+  "OpenStdin": false,
+  "StdinOnce": false,
+  "Env": [
+    "OPENAI_API_BASE_URL=http://host.docker.internal:8000/v1",
+    "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "LANG=C.UTF-8",
+    "GPG_KEY=A035C8C19219BA821ECEA86B64E628F8D684696D",
+    "PYTHON_VERSION=3.11.14",
+    "PYTHON_SHA256=8d3ed8ec5c88c1c95f5e558612a725450d2452813ddad5e58fdb1a53b1209b78",
+    "ENV=prod",
+    "PORT=8080",
+    "USE_OLLAMA_DOCKER=false",
+    "USE_CUDA_DOCKER=true",
+    "USE_SLIM_DOCKER=false",
+    "USE_CUDA_DOCKER_VER=cu128",
+    "USE_EMBEDDING_MODEL_DOCKER=sentence-transformers/all-MiniLM-L6-v2",
+    "USE_RERANKING_MODEL_DOCKER=",
+    "OLLAMA_BASE_URL=/ollama",
+    "OPENAI_API_KEY=",
+    "WEBUI_SECRET_KEY=",
+    "SCARF_NO_ANALYTICS=true",
+    "DO_NOT_TRACK=true",
+    "ANONYMIZED_TELEMETRY=false",
+    "WHISPER_MODEL=base",
+    "WHISPER_MODEL_DIR=/app/backend/data/cache/whisper/models",
+    "RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2",
+    "RAG_RERANKING_MODEL=",
+    "SENTENCE_TRANSFORMERS_HOME=/app/backend/data/cache/embedding/models",
+    "TIKTOKEN_ENCODING_NAME=cl100k_base",
+    "TIKTOKEN_CACHE_DIR=/app/backend/data/cache/tiktoken",
+    "HF_HOME=/app/backend/data/cache/embedding/models",
+    "HOME=/root",
+    "WEBUI_BUILD_VERSION=e0d5de16978786b8a7538adf1efcde5258f38faf",
+    "DOCKER=true"
+  ],
+  "Cmd": [
+    "bash",
+    "start.sh"
+  ],
+  "Healthcheck": {
+    "Test": [
+      "CMD-SHELL",
+      "curl --silent --fail http://localhost:${PORT:-8080}/health | jq -ne 'input.status == true' || exit 1"
+    ]
+  },
+  "Image": "ghcr.io/open-webui/open-webui:cuda",
+  "Volumes": null,
+  "WorkingDir": "/app/backend",
+  "Entrypoint": null,
+  "Labels": {
+    "org.opencontainers.image.created": "2025-11-06T21:46:58.794Z",
+    "org.opencontainers.image.description": "User-friendly AI Interface (Supports Ollama, OpenAI API, ...)",
+    "org.opencontainers.image.licenses": "NOASSERTION",
+    "org.opencontainers.image.revision": "e0d5de16978786b8a7538adf1efcde5258f38faf",
+    "org.opencontainers.image.source": "https://github.com/open-webui/open-webui",
+    "org.opencontainers.image.title": "open-webui",
+    "org.opencontainers.image.url": "https://github.com/open-webui/open-webui",
+    "org.opencontainers.image.version": "main-cuda"
+  },
+  "StopTimeout": 1
+}

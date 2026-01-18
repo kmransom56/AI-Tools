@@ -1,19 +1,16 @@
 {
   "mcpServers": {
     "Meraki_Curated": {
-      "command": "C:\\Users\\south\\meraki-magic-mcp\\.venv\\Scripts\\fastmcp.exe",
-      "args": ["run", "C:\\Users\\south\\meraki-magic-mcp\\meraki-mcp.py"]
+      "command": "C:\\Users\\Keith Ransom\\meraki-magic-mcp\\.venv\\Scripts\\fastmcp.exe",
+      "args": ["run", "C:\\Users\\Keith Ransom\\meraki-magic-mcp\\meraki-mcp.py"]
     },
     "Meraki_Full_API": {
-      "command": "C:\\Users\\south\\meraki-magic-mcp\\.venv\\Scripts\\fastmcp.exe",
-      "args": ["run", "C:\\Users\\south\\meraki-magic-mcp\\meraki-mcp-dynamic.py"]
+      "command": "C:\\Users\\Keith Ransomh\\meraki-magic-mcp\\.venv\\Scripts\\fastmcp.exe",
+      "args": ["run", "C:\\Users\\Keith Ransom\\meraki-magic-mcp\\meraki-mcp-dynamic.py"]
     }
-  }
-}
-{
+  },
   "powershell.scriptAnalysis.enable": true,
-  "powershell.scriptAnalysis.settingsPath": "",
-  "powershell.scriptAnalysis.settingsPath":"C:\\Users\south\\OneDrive\\Documents\\PSScriptAnalyzerSettings.psd1",
+  "powershell.scriptAnalysis.settingsPath": "C:\\Users\\Keith Ransom\\OneDrive\\Documents\\PSScriptAnalyzerSettings.psd1",
   "powershell.codeFormatting.preset": "Custom",
   "powershell.codeFormatting.useCorrectCasing": true,
   "powershell.codeFormatting.alignPropertyValuePairs": true

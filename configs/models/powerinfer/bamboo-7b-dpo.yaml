@@ -1,0 +1,41 @@
+# PowerInfer Model Policy: Bamboo-7B DPO
+# Recommended for general use - excellent balance of speed and quality
+
+engine: powerinfer
+model_path: PowerInfer/models/bamboo-7b-dpo-v0.1.q4.powerinfer.gguf
+
+generation:
+  max_tokens: 512
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 40
+
+runtime:
+  threads: 8
+  gpu_layers: 32
+  vram_budget_gb: 10
+  batch_size: 4
+  context_size: 2048
+  timeout: 300
+
+audit:
+  model_version: "bamboo-7b-dpo-v0.1-q4"
+  source_repo: "hf://PowerInfer/Bamboo-DPO-v0.1-gguf"
+  checksum: "" # Add after download
+  created_at: "2026-01-18"
+
+metadata:
+  description: "Bamboo-7B DPO Q4 - Fast and high-quality local LLM"
+  use_cases:
+    - "General conversation"
+    - "Code generation"
+    - "Question answering"
+    - "Creative writing"
+  performance:
+    tokens_per_second: "15-20"
+    vram_usage: "6-8GB"
+    model_size: "~4GB"
+  hardware:
+    recommended_gpu: "RTX 3060 or better"
+    minimum_vram: "8GB"
+    recommended_ram: "16GB"

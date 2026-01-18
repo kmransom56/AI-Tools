@@ -155,6 +155,91 @@ services:
       mcp.endpoint: http://mcp-discovery:5000
       mcp.capabilities: "discovery,registry,cache"
 
+  # -------------------------------------------------------------------
+  # Open WebUI - User-friendly AI Interface with GPU acceleration
+  # https://github.com/open-webui/open-webui
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:cuda
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui:/app/backend/data
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-}
+      - ENV=prod
+      - PORT=8080
+      - USE_CUDA_DOCKER=true
+      - USE_CUDA_DOCKER_VER=cu128
+      - OLLAMA_BASE_URL=/ollama
+      - OPENAI_API_BASE_URL=http://host.docker.internal:8000/v1
+      - ANONYMIZED_TELEMETRY=false
+      - DO_NOT_TRACK=true
+      - SCARF_NO_ANALYTICS=true
+      - WHISPER_MODEL=base
+      - RAG_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+      - SENTENCE_TRANSFORMERS_HOME=/app/backend/data/cache/embedding/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # -------------------------------------------------------------------
+  # PowerInfer - High-speed Local LLM Inference Engine
+  # https://github.com/SJTU-IPADS/PowerInfer
+  powerinfer:
+    build:
+      context: .
+      dockerfile: Dockerfile.powerinfer
+    container_name: powerinfer
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./PowerInfer/models:/models
+    environment:
+      - MODEL_PATH=/models/bamboo-7b-dpo-v0.1.q4.powerinfer.gguf
+      - VRAM_BUDGET=10
+      - THREADS=8
+      - CONTEXT_SIZE=2048
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    command: >
+      /app/build/bin/server
+      -m /models/bamboo-7b-dpo-v0.1.q4.powerinfer.gguf
+      --host 0.0.0.0
+      --port 8080
+      --vram-budget 10
+      -t 8
+      -c 2048
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
 volumes:
+
   tabby-data:
   mcp-redis-data:
+  open-webui:
+    external: true
