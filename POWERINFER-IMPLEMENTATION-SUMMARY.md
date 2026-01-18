@@ -379,8 +379,8 @@ Error: Out of memory
 - [x] Download model (`.\download-powerinfer-models.ps1`) (In Progress)
 - [x] Web App Integration (Configuration & Docker)
 - [x] VS Code Settings Fix (`settings.json`)
-- [ ] Test CLI integration
-- [ ] Start API server
+- [x] Test CLI integration
+- [x] Start API server (Running on port 8081 - CPU Mode)
 
 ## 🌐 Web App Integration
 

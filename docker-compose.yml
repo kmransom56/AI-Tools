@@ -212,7 +212,7 @@ services:
     volumes:
       - ./PowerInfer/models:/models
     environment:
-      - MODEL_PATH=/models/bamboo-7b-dpo-v0.1.q4.powerinfer.gguf
+      - MODEL_PATH=/models/bamboo-7b-dpo-v0.1.Q4_0.gguf
       - VRAM_BUDGET=10
       - THREADS=8
       - CONTEXT_SIZE=2048
@@ -225,7 +225,7 @@ services:
               capabilities: [gpu]
     command: >
       /app/build/bin/server
-      -m /models/bamboo-7b-dpo-v0.1.q4.powerinfer.gguf
+      -m /models/bamboo-7b-dpo-v0.1.Q4_0.gguf
       --host 0.0.0.0
       --port 8080
       --vram-budget 10

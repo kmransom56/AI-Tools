@@ -23,9 +23,11 @@ jinja2
 httpx
 
 # ML/Deep Learning (optional, for local inference)
-# torch
-# transformers
-# accelerate
+torch --index-url https://download.pytorch.org/whl/cu121
+torchvision --index-url https://download.pytorch.org/whl/cu121
+torchaudio --index-url https://download.pytorch.org/whl/cu121
+transformers
+accelerate
 
 # Utilities
 requests

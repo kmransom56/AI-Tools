@@ -623,6 +623,16 @@ async def cagent_run(req: CagentRunRequest):
     # We'll enforce dry run using env var regardless of file
     env_overrides = req.overrides or {}
     env = {"CAGENT_DRY_RUN": "1"}
+    
+    # Pass through API keys from host environment to container
+    # This allows cagent agents to use cloud AI providers
+    if os.getenv("OPENAI_API_KEY"):
+        env["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
+    if os.getenv("ANTHROPIC_API_KEY"):
+        env["ANTHROPIC_API_KEY"] = os.getenv("ANTHROPIC_API_KEY")
+    if os.getenv("GEMINI_API_KEY"):
+        env["GEMINI_API_KEY"] = os.getenv("GEMINI_API_KEY")
+    
     # Merge any safe overrides (but do not allow disabling dry_run or increasing max_iterations)
     if env_overrides.get("CAGENT_DRY_RUN") in ["0", "false", "False"]:
         raise HTTPException(
@@ -665,6 +675,8 @@ async def cagent_run(req: CagentRunRequest):
     # Use the image entrypoint: run <example_relative_path>
     # We pass command ['run', example_relpath]
     example_rel = os.path.relpath(example_path, start=host_workspace)
+    # Convert Windows backslashes to forward slashes for Docker/Linux container
+    example_rel = example_rel.replace("\\", "/")
     try:
         logs = docker_client.containers.run(
             image=image,
@@ -685,13 +697,16 @@ async def cagent_run(req: CagentRunRequest):
             logs_text = str(logs)
         return {"success": True, "logs": logs_text}
     except docker.errors.ContainerError as ce:
-        # container failed, get logs
+        # container failed, get logs and decode if bytes
+        stderr = getattr(ce, "stderr", "")
+        if isinstance(stderr, bytes):
+            stderr = stderr.decode("utf-8", errors="replace")
         return JSONResponse(
             status_code=500,
             content={
                 "success": False,
                 "error": str(ce),
-                "logs": getattr(ce, "stderr", ""),
+                "logs": stderr,
             },
         )
     except Exception as e:
