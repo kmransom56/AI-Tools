@@ -1,0 +1,14 @@
+## Summary
+- Updated: two GPU branches gpu-k80-test and gpu-rtx3060ti-test from origin/main
+
+## Tests
+- Smoke tests added to AI-Tools-ci/tests/test_smoke.py
+- Full test suite attempted; full PyTest stack is not installed in this runner; see notes below.
+
+## Hardware notes
+- GPU-K80 (Kepler) testing branch: gpu-k80-test
+- GPU-RTX3060Ti testing branch: gpu-rtx3060ti-test
+
+## Next steps
+- If you want, I can push branches and open a PR with the results and notes.
+- Propose a CI workflow to run on both branches (two-branch hardware sanity checks).
