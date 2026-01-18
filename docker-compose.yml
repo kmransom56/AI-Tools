@@ -60,6 +60,8 @@ services:
   # cagent – AI agent runtime with tool integration
   cagent:
     image: cagent:latest
+    build:
+      context: ../cagent
     container_name: cagent
     command: ["serve"]
     ports:
@@ -87,10 +89,10 @@ services:
       - "11003:8000"
     environment:
       - MCP_API_KEY=${MCP_API_KEY}
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_TOKEN}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD","curl","-f","http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -139,6 +141,7 @@ services:
       - DISCOVERY_INTERVAL=30
       - SERVICE_TTL=60
       - ENABLE_AUTO_DISCOVERY=true
+      - PYTHONPATH=/app/src
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
@@ -240,7 +243,6 @@ services:
     restart: unless-stopped
 
 volumes:
-
   tabby-data:
   mcp-redis-data:
   open-webui:
