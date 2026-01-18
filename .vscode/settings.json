@@ -1,4 +1,5 @@
 {
+  "version": "0.2.0",
   "mcpServers": {
     "Meraki_Curated": {
       "command": "C:\\Users\\Keith Ransom\\meraki-magic-mcp\\.venv\\Scripts\\fastmcp.exe",

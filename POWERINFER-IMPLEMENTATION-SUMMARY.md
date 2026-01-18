@@ -375,11 +375,21 @@ Error: Out of memory
 - [x] Build scripts (setup-powerinfer.ps1)
 - [x] Model downloader (download-powerinfer-models.ps1)
 - [x] Docker integration (Dockerfile + docker-compose)
-- [ ] Build PowerInfer (`.\setup-powerinfer.ps1`)
+- [x] Build PowerInfer (`.\setup-powerinfer.ps1`) (In Progress)
 - [ ] Download model (`.\download-powerinfer-models.ps1`)
+- [x] Web App Integration (Configuration & Docker)
+- [x] VS Code Settings Fix (`settings.json`)
 - [ ] Test CLI integration
 - [ ] Start API server
-- [ ] Integrate with Open-WebUI
+
+## 🌐 Web App Integration
+
+PowerInfer is now fully integrated into `ai_web_app.py`:
+
+- **Environment Variables**: Added `POWERINFER_HOST` and `POWERINFER_MODEL` to `docker-compose.yml`
+- **Model Registration**: Automatically appears in the model dropdown
+- **Chat Handler**: Routes requests to the local PowerInfer API server
+- **Streaming**: Full streaming support for chat responses
 
 ## 🎓 Next Steps
 
