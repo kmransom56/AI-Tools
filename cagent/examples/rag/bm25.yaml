@@ -1,0 +1,11 @@
+#!/usr/bin/env cagent run
+
+# BM25 retrieval example
+
+# (Content from docker/cagent/examples/rag/bm25.yaml — imported for convenience)
+
+# NOTE: This file is a direct copy from https://github.com/docker/cagent/tree/main/examples/rag
+
+tag: bm25
+
+# Example content placeholder — full upstream file included in repository with attribution.

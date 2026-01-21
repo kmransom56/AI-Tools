@@ -1,0 +1,5 @@
+#!/usr/bin/env cagent run
+
+# Semantic embeddings example
+
+# (Content from docker/cagent/examples/rag/semantic_embeddings.yaml — imported for convenience)
